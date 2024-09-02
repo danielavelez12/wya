@@ -6,9 +6,12 @@ import {
   addDoc,
   query,
   updateDoc,
+  getFirestore,
 } from "firebase/firestore";
 
-import { db } from "../firebaseConfig";
+import app from "../ios/wya/firebaseConfig";
+
+const db = getFirestore(app);
 
 export async function fetchUsers() {
   console.log("fetchUsers:  starting");
@@ -55,7 +58,7 @@ export async function loginOrSignup(phoneNumber) {
     const docRef = collection(db, "users");
     const phoneNumberQuery = query(
       docRef,
-      where("phone_number", "==", phoneNumber),
+      where("phone_number", "==", phoneNumber)
     );
     const snapshot = await getDocs(phoneNumberQuery);
     if (snapshot.empty) {
