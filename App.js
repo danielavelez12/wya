@@ -16,6 +16,10 @@ import {
   updateLastLocation,
 } from "./src/api";
 
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import MapScreen from "./src/screens/MapScreen";
+
 const styles = {
   title: {
     fontSize: 64,
@@ -76,6 +80,8 @@ const timestampToDate = (timestamp) => {
   const date = new Date(timestamp);
   return date.toLocaleString();
 };
+
+const Stack = createStackNavigator();
 
 export default function App() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -157,7 +163,7 @@ export default function App() {
       } catch (e) {
         console.error("fetch_location:  error: ", e);
       }
-    },
+    }
   );
 
   Location.startLocationUpdatesAsync("fetch_location", {
@@ -194,12 +200,12 @@ export default function App() {
       await updateLastLocation(
         userID,
         location.coords.latitude,
-        location.coords.longitude,
+        location.coords.longitude
       );
     })();
   }, [phoneNumber, userID]);
 
-  return (
+  const HomeScreen = () => (
     <View style={styles.home}>
       <Animated.View
         style={[
@@ -291,5 +297,21 @@ export default function App() {
         </>
       )}
     </View>
+  );
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {location ? (
+          <Stack.Screen
+            name="Map"
+            component={MapScreen}
+            initialParams={{ location }}
+          />
+        ) : (
+          <Stack.Screen name="Home" component={HomeScreen} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
