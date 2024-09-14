@@ -1,6 +1,6 @@
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -84,10 +84,10 @@ const timestampToDate = (timestamp) => {
 const Stack = createStackNavigator();
 
 export default function App() {
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [newPhoneNumber, setNewPhoneNumber] = useState("");
   const [showName, setShowName] = useState(false);
   const [userID, setUserID] = useState(null);
 
@@ -98,55 +98,63 @@ export default function App() {
   const [floatAnim] = useState(new Animated.Value(0));
   const [loading, setLoading] = useState(false);
 
-  const submitPhoneNumber = async () => {
-    setLoading(true);
-    console.log("submitPhoneNumber:  starting");
-    const data = await loginOrSignup(phoneNumber);
-    setLoading(false);
-    if (!data) {
-      setShowSignup(true);
-      fadeIn();
-      floatUp(-50);
-    } else {
-      console.log(data);
-      setFirstName(data.data.first_name);
-      setLastName(data.data.last_name);
-      setShowName(true);
-      floatUp(-250);
-      setUserID(data.id);
-      fadeIn();
-    }
-    console.log("submitPhoneNumber:  done");
-  };
-  const signup = async () => {
+  const submitPhoneNumber = useCallback(
+    async (phoneNumber) => {
+      setLoading(true);
+      console.log("submitPhoneNumber:  starting");
+      const data = await loginOrSignup(phoneNumber);
+      setLoading(false);
+      if (!data) {
+        setShowSignup(true);
+        setNewPhoneNumber(phoneNumber);
+        fadeIn();
+        floatUp(-50);
+      } else {
+        console.log(data);
+        setFirstName(data.data.first_name);
+        setLastName(data.data.last_name);
+        setShowName(true);
+        floatUp(-250);
+        setUserID(data.id);
+        fadeIn();
+      }
+      console.log("submitPhoneNumber:  done");
+    },
+    [fadeIn, floatUp]
+  );
+
+  const signup = useCallback(async () => {
     console.log("signup:  starting");
     setLoading(true);
-    const newUserID = await createUser(phoneNumber, firstName, lastName);
+    const newUserID = await createUser(newPhoneNumber, firstName, lastName);
     setUserID(newUserID);
     setLoading(false);
     console.log("signup:  done");
     setShowName(true);
     floatUp(-250);
     fadeIn();
-  };
+  }, [newPhoneNumber, firstName, lastName, floatUp, fadeIn]);
 
-  const fadeIn = () => {
+  const fadeIn = useCallback(() => {
     console.log("fadeIn:  starting");
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500, // Duration in milliseconds
       useNativeDriver: true, // Use native driver for better performance
     }).start();
-  };
+  }, [fadeAnim]);
 
-  const floatUp = (to) => {
-    console.log("floatUp:  starting");
-    Animated.timing(floatAnim, {
-      toValue: to,
-      duration: 500, // Duration in milliseconds
-      useNativeDriver: true, // Use native driver for better performance
-    }).start();
-  };
+  const floatUp = useCallback(
+    (to) => {
+      console.log("floatUp:  starting");
+      Animated.timing(floatAnim, {
+        toValue: to,
+        duration: 500, // Duration in milliseconds
+        useNativeDriver: true, // Use native driver for better performance
+      }).start();
+    },
+    [floatAnim]
+  );
 
   TaskManager.defineTask(
     "fetch_location",
@@ -203,9 +211,31 @@ export default function App() {
         location.coords.longitude
       );
     })();
-  }, [phoneNumber, userID]);
+  }, [userID]);
 
-  const HomeScreen = () => (
+  const ControlledInput = React.memo(({ style, onSubmit, ...props }) => {
+    const [value, setValue] = useState("");
+
+    const handleChangeText = useCallback((text) => {
+      setValue(text);
+    }, []);
+
+    const handleSubmitEditing = useCallback(() => {
+      onSubmit(value);
+    }, [value, onSubmit]);
+
+    return (
+      <TextInput
+        {...props}
+        style={style}
+        value={value}
+        onChangeText={handleChangeText}
+        onSubmitEditing={handleSubmitEditing}
+      />
+    );
+  });
+
+  const HomeScreen = React.memo(() => (
     <View style={styles.home}>
       <Animated.View
         style={[
@@ -234,31 +264,27 @@ export default function App() {
                     },
                   ]}
                 >
-                  <TextInput
+                  <ControlledInput
                     style={styles.nameInput}
                     placeholder="First name"
                     placeholderTextColor="gray"
-                    value={firstName}
-                    onChangeText={setFirstName}
+                    onSubmit={handleFirstNameSubmit}
                   />
-                  <TextInput
+                  <ControlledInput
                     style={styles.nameInput}
                     placeholder="Last name"
                     placeholderTextColor="gray"
-                    value={lastName}
-                    onChangeText={setLastName}
-                    onSubmitEditing={signup}
+                    onSubmit={handleLastNameSubmit}
+                    returnKeyType="done"
                   />
                 </Animated.View>
               ) : (
-                <TextInput
+                <ControlledInput
                   style={styles.phoneInput}
                   keyboardType="phone-pad"
                   placeholder="Phone number"
                   placeholderTextColor="gray"
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  onSubmitEditing={submitPhoneNumber}
+                  onSubmit={handlePhoneSubmit}
                   returnKeyType="done"
                 />
               )}
@@ -297,6 +323,25 @@ export default function App() {
         </>
       )}
     </View>
+  ));
+
+  const handlePhoneSubmit = useCallback(
+    (value) => {
+      submitPhoneNumber(value);
+    },
+    [submitPhoneNumber]
+  );
+
+  const handleFirstNameSubmit = useCallback((value) => {
+    setFirstName(value);
+  }, []);
+
+  const handleLastNameSubmit = useCallback(
+    (value) => {
+      setLastName(value);
+      signup();
+    },
+    [signup]
   );
 
   return (

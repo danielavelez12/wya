@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   toggleButtonText: {
-    color: "whit",
+    color: "white",
     fontWeight: "bold",
   },
 });
