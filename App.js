@@ -1,5 +1,6 @@
 import * as Location from "expo-location";
 import * as TaskManager from "expo-task-manager";
+import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
@@ -8,17 +9,17 @@ import {
   Animated,
   ActivityIndicator,
 } from "react-native";
-
+import * as SecureStore from "expo-secure-store";
 import {
   fetchUsers,
   loginOrSignup,
   createUser,
   updateLastLocation,
 } from "./src/api";
-
+import SignUpScreen from "./src/screens/Auth/sign-up";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import MapScreen from "./src/screens/MapScreen";
+import MapScreen from "./src/screens/Auth/MapScreen";
 
 const styles = {
   title: {
@@ -84,6 +85,14 @@ const timestampToDate = (timestamp) => {
 const Stack = createStackNavigator();
 
 export default function App() {
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (!publishableKey) {
+    throw new Error(
+      "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env"
+    );
+  }
+  console.log("Clerk Publishable Key:", publishableKey);
+
   const [showSignup, setShowSignup] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -97,6 +106,32 @@ export default function App() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [floatAnim] = useState(new Animated.Value(0));
   const [loading, setLoading] = useState(false);
+
+  const tokenCache = {
+    async getToken() {
+      try {
+        const key = "user_token";
+        const item = await SecureStore.getItemAsync(key);
+        if (item) {
+          console.log(`${key} was used 🔐 \n`);
+        } else {
+          console.log("No values stored under key: " + key);
+        }
+        return item;
+      } catch (error) {
+        console.error("SecureStore get item error: ", error);
+        await SecureStore.deleteItemAsync(key);
+        return null;
+      }
+    },
+    async saveToken() {
+      try {
+        return SecureStore.setItemAsync(key, value);
+      } catch (err) {
+        return;
+      }
+    },
+  };
 
   const submitPhoneNumber = useCallback(
     async (phoneNumber) => {
@@ -345,18 +380,20 @@ export default function App() {
   );
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {location ? (
-          <Stack.Screen
-            name="Map"
-            component={MapScreen}
-            initialParams={{ location }}
-          />
-        ) : (
-          <Stack.Screen name="Home" component={HomeScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {/* <Stack.Screen name="Home" component={HomeScreen} /> */}
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          {location && (
+            <Stack.Screen
+              name="Map"
+              component={MapScreen}
+              initialParams={{ location }}
+            />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ClerkProvider>
   );
 }
