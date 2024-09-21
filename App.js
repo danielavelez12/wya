@@ -1,25 +1,21 @@
-import * as Location from "expo-location";
-import * as TaskManager from "expo-task-manager";
-import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Animated,
-  ActivityIndicator,
-} from "react-native";
-import * as SecureStore from "expo-secure-store";
-import {
-  fetchUsers,
-  loginOrSignup,
-  createUser,
-  updateLastLocation,
-} from "./src/api";
-import SignUpScreen from "./src/screens/Auth/sign-up";
+import { ClerkProvider } from "@clerk/clerk-expo";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import * as Location from "expo-location";
+import * as SecureStore from "expo-secure-store";
+import * as TaskManager from "expo-task-manager";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+
+import { createUser, loginOrSignup, updateLastLocation } from "./src/api";
 import MapScreen from "./src/screens/Auth/MapScreen";
+import SignUpScreen from "./src/screens/Auth/sign-up";
 
 const styles = {
   title: {
@@ -88,7 +84,7 @@ export default function App() {
   const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   if (!publishableKey) {
     throw new Error(
-      "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env"
+      "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env",
     );
   }
   console.log("Clerk Publishable Key:", publishableKey);
@@ -108,9 +104,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   const tokenCache = {
-    async getToken() {
+    async getToken(key) {
       try {
-        const key = "user_token";
         const item = await SecureStore.getItemAsync(key);
         if (item) {
           console.log(`${key} was used 🔐 \n`);
@@ -124,11 +119,12 @@ export default function App() {
         return null;
       }
     },
-    async saveToken() {
+    async saveToken(key, value) {
       try {
-        return SecureStore.setItemAsync(key, value);
-      } catch (err) {
-        return;
+        await SecureStore.setItemAsync(key, value);
+        console.log(`Token saved under key: ${key}`);
+      } catch (error) {
+        console.error("SecureStore set item error: ", error);
       }
     },
   };
@@ -155,7 +151,7 @@ export default function App() {
       }
       console.log("submitPhoneNumber:  done");
     },
-    [fadeIn, floatUp]
+    [fadeIn, floatUp],
   );
 
   const signup = useCallback(async () => {
@@ -188,7 +184,7 @@ export default function App() {
         useNativeDriver: true, // Use native driver for better performance
       }).start();
     },
-    [floatAnim]
+    [floatAnim],
   );
 
   TaskManager.defineTask(
@@ -206,7 +202,7 @@ export default function App() {
       } catch (e) {
         console.error("fetch_location:  error: ", e);
       }
-    }
+    },
   );
 
   Location.startLocationUpdatesAsync("fetch_location", {
@@ -243,7 +239,7 @@ export default function App() {
       await updateLastLocation(
         userID,
         location.coords.latitude,
-        location.coords.longitude
+        location.coords.longitude,
       );
     })();
   }, [userID]);
@@ -364,7 +360,7 @@ export default function App() {
     (value) => {
       submitPhoneNumber(value);
     },
-    [submitPhoneNumber]
+    [submitPhoneNumber],
   );
 
   const handleFirstNameSubmit = useCallback((value) => {
@@ -376,14 +372,27 @@ export default function App() {
       setLastName(value);
       signup();
     },
-    [signup]
+    [signup],
   );
+
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+
+  useEffect(() => {
+    setIsNavigationReady(true);
+  }, []);
+
+  if (!isNavigationReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {/* <Stack.Screen name="Home" component={HomeScreen} /> */}
           <Stack.Screen name="SignUp" component={SignUpScreen} />
           {location && (
             <Stack.Screen

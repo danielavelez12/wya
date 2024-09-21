@@ -1,53 +1,44 @@
 import { useSignIn } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
-import { Text, TextInput, Button, View } from "react-native";
-import React from "react";
-import SignUpScreen from "./sign-up";
+import { useCallback, useState } from "react";
+import { Button, Text, TextInput, View } from "react-native";
 
 export default function Page() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
-  const onSignInPress = React.useCallback(async () => {
+  const onSignInPress = useCallback(async () => {
     if (!isLoaded) {
       return;
     }
 
     try {
       const signInAttempt = await signIn.create({
-        identifier: emailAddress,
-        password,
+        identifier: phoneNumber,
       });
 
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace("/");
       } else {
-        // See https://clerk.com/docs/custom-flows/error-handling
-        // for more info on error handling
+        // Handle additional steps (e.g., OTP verification) if required
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
     }
-  }, [isLoaded, emailAddress, password]);
+  }, [isLoaded, phoneNumber, router, setActive, signIn]);
 
   return (
     <View>
       <TextInput
         autoCapitalize="none"
-        value={emailAddress}
-        placeholder="Email..."
-        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-      />
-      <TextInput
-        value={password}
-        placeholder="Password..."
-        secureTextEntry={true}
-        onChangeText={(password) => setPassword(password)}
+        keyboardType="phone-pad"
+        value={phoneNumber}
+        placeholder="Phone Number..."
+        onChangeText={(phoneNumber) => setPhoneNumber(phoneNumber)}
       />
       <Button title="Sign In" onPress={onSignInPress} />
       <View>

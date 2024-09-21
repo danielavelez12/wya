@@ -1,16 +1,22 @@
-import * as React from "react";
-import { TextInput, Button, View, StyleSheet } from "react-native";
-import { useSignUp } from "@clerk/clerk-expo";
+import { useAuth, useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
+  const { signOut, isSignedIn } = useAuth();
   const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [pendingVerification, setPendingVerification] = React.useState(false);
-  const [code, setCode] = React.useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState("");
+
+  useEffect(() => {
+    if (isSignedIn) {
+      console.log("User is already signed in");
+    }
+  }, [isSignedIn]);
 
   const onSignUpPress = async () => {
     if (!isLoaded) {
@@ -19,15 +25,11 @@ export default function SignUpScreen() {
     }
 
     try {
-      console.log("Creating sign-up with:", { emailAddress, password });
       await signUp.create({
-        emailAddress,
-        password,
+        phoneNumber,
       });
 
-      console.log("Preparing email address verification");
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-
+      await signUp.preparePhoneNumberVerification({ strategy: "phone_code" });
       setPendingVerification(true);
     } catch (err) {
       console.error("Error during sign-up:", JSON.stringify(err, null, 2));
@@ -40,56 +42,80 @@ export default function SignUpScreen() {
       return;
     }
 
+    if (!code) {
+      console.error("Verification code is empty");
+      return;
+    }
+
     try {
-      console.log("Attempting email address verification with code:", code);
-      const completeSignUp = await signUp.attemptEmailAddressVerification({
+      console.log("Attempting phone number verification with code:", code);
+      const completeSignUp = await signUp.attemptPhoneNumberVerification({
         code,
       });
+
+      console.log("Verification response:", completeSignUp);
 
       if (completeSignUp.status === "complete") {
         await setActive({ session: completeSignUp.createdSessionId });
         router.replace("/");
       } else {
-        console.error(
-          "Verification not complete:",
-          JSON.stringify(completeSignUp, null, 2)
-        );
+        console.error("Verification not complete:", completeSignUp);
       }
     } catch (err) {
-      console.error("Error during verification:", JSON.stringify(err, null, 2));
+      console.error("Error during verification:", err.message);
+      console.error("Error stack:", err.stack);
     }
   };
 
+  const onSignOutPress = async () => {
+    try {
+      await signOut();
+      setPendingVerification(false);
+      setPhoneNumber("");
+      setCode("");
+    } catch (err) {
+      console.error("Error signing out:", err);
+    }
+  };
+
+  if (!isLoaded) {
+    return <Text>Loading...</Text>;
+  }
+
   return (
     <View style={styles.container}>
-      {!pendingVerification && (
+      {isSignedIn ? (
         <>
-          <TextInput
-            autoCapitalize="none"
-            value={emailAddress}
-            placeholder="Email..."
-            onChangeText={(email) => setEmailAddress(email)}
-            style={styles.input}
-          />
-          <TextInput
-            value={password}
-            placeholder="Password..."
-            secureTextEntry={true}
-            onChangeText={(password) => setPassword(password)}
-            style={styles.input}
-          />
-          <Button title="Sign Up" onPress={onSignUpPress} />
+          <Text>You are already signed in.</Text>
+          <Button title="Sign Out" onPress={onSignOutPress} />
         </>
-      )}
-      {pendingVerification && (
+      ) : (
         <>
-          <TextInput
-            value={code}
-            placeholder="Code..."
-            onChangeText={(code) => setCode(code)}
-            style={styles.input}
-          />
-          <Button title="Verify Email" onPress={onPressVerify} />
+          {!pendingVerification && (
+            <>
+              <TextInput
+                autoCapitalize="none"
+                value={phoneNumber}
+                placeholder="Phone Number..."
+                keyboardType="phone-pad"
+                onChangeText={(phone) => setPhoneNumber(phone)}
+                style={styles.input}
+              />
+              <Button title="Sign Up" onPress={onSignUpPress} />
+            </>
+          )}
+          {pendingVerification && (
+            <>
+              <TextInput
+                value={code}
+                placeholder="Verification Code..."
+                keyboardType="numeric"
+                onChangeText={(code) => setCode(code)}
+                style={styles.input}
+              />
+              <Button title="Verify Phone Number" onPress={onPressVerify} />
+            </>
+          )}
         </>
       )}
     </View>
