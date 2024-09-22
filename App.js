@@ -1,8 +1,11 @@
-import { ClerkProvider } from "@clerk/clerk-expo";
+import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { Ionicons } from "@expo/vector-icons";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import * as Location from "expo-location";
 import * as SecureStore from "expo-secure-store";
+import { StatusBar } from "expo-status-bar";
 import * as TaskManager from "expo-task-manager";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -12,10 +15,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { createUser, loginOrSignup, updateLastLocation } from "./src/api";
-import MapScreen from "./src/screens/Auth/MapScreen";
-import SignUpScreen from "./src/screens/Auth/sign-up";
+import SignInScreen from "./src/screens/Auth/sign-in";
+import MapScreen from "./src/screens/MapScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
 
 const styles = {
   title: {
@@ -80,11 +85,103 @@ const timestampToDate = (timestamp) => {
 
 const Stack = createStackNavigator();
 
+function AuthNavigator() {
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  console.log({ isLoaded, isSignedIn });
+
+  const [location, setLocation] = useState(null);
+  const Tab = createBottomTabNavigator();
+
+  useEffect(() => {
+    (async () => {
+      console.log("App:  useEffect starting");
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("App:  useEffect:  permission not granted");
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
+      console.log("App:  useEffect:  location: ", location);
+      await updateLastLocation(
+        userId,
+        location.coords.latitude,
+        location.coords.longitude
+      );
+    })();
+  }, [userId]);
+
+  if (!isLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isSignedIn ? (
+        <Stack.Screen name="SignIn" component={SignInScreen} />
+      ) : (
+        <Stack.Screen name="Main">
+          {() => (
+            <>
+              {location && (
+                <Tab.Navigator
+                  screenOptions={({ route }) => ({
+                    tabBarIcon: ({ focused, color, size }) => {
+                      let iconName;
+
+                      if (route.name === "Map") {
+                        iconName = focused ? "map" : "map-outline";
+                      } else if (route.name === "Profile") {
+                        iconName = focused
+                          ? "person-circle"
+                          : "person-circle-outline";
+                      }
+
+                      return (
+                        <Ionicons name={iconName} size={size} color={color} />
+                      );
+                    },
+                    tabBarActiveTintColor: "#8B4513",
+                    tabBarInactiveTintColor: "#A0522D",
+                    tabBarStyle: {
+                      backgroundColor: "#FFF8DC",
+                    },
+                    headerStyle: {
+                      backgroundColor: "#FFF8DC",
+                    },
+                    headerTintColor: "#8B4513",
+                  })}
+                >
+                  <Tab.Screen
+                    name="Map"
+                    component={MapScreen}
+                    initialParams={{ location }}
+                  />
+                  <Tab.Screen
+                    name="Profile"
+                    component={ProfileScreen}
+                    initialParams={{ location }}
+                  />
+                </Tab.Navigator>
+              )}
+            </>
+          )}
+        </Stack.Screen>
+      )}
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
   if (!publishableKey) {
     throw new Error(
-      "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env",
+      "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env"
     );
   }
   console.log("Clerk Publishable Key:", publishableKey);
@@ -96,7 +193,7 @@ export default function App() {
   const [showName, setShowName] = useState(false);
   const [userID, setUserID] = useState(null);
 
-  const [location, setLocation] = useState(null);
+  const location = null;
   console.log("App:  starting");
 
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -151,7 +248,7 @@ export default function App() {
       }
       console.log("submitPhoneNumber:  done");
     },
-    [fadeIn, floatUp],
+    [fadeIn, floatUp]
   );
 
   const signup = useCallback(async () => {
@@ -184,7 +281,7 @@ export default function App() {
         useNativeDriver: true, // Use native driver for better performance
       }).start();
     },
-    [floatAnim],
+    [floatAnim]
   );
 
   TaskManager.defineTask(
@@ -202,7 +299,7 @@ export default function App() {
       } catch (e) {
         console.error("fetch_location:  error: ", e);
       }
-    },
+    }
   );
 
   Location.startLocationUpdatesAsync("fetch_location", {
@@ -222,27 +319,6 @@ export default function App() {
       Location.stopLocationUpdatesAsync("fetch_location");
     }
   });
-
-  useEffect(() => {
-    if (!userID) return;
-    (async () => {
-      console.log("App:  useEffect starting");
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("App:  useEffect:  permission not granted");
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-      console.log("App:  useEffect:  location: ", location);
-      await updateLastLocation(
-        userID,
-        location.coords.latitude,
-        location.coords.longitude,
-      );
-    })();
-  }, [userID]);
 
   const ControlledInput = React.memo(({ style, onSubmit, ...props }) => {
     const [value, setValue] = useState("");
@@ -360,7 +436,7 @@ export default function App() {
     (value) => {
       submitPhoneNumber(value);
     },
-    [submitPhoneNumber],
+    [submitPhoneNumber]
   );
 
   const handleFirstNameSubmit = useCallback((value) => {
@@ -372,7 +448,7 @@ export default function App() {
       setLastName(value);
       signup();
     },
-    [signup],
+    [signup]
   );
 
   const [isNavigationReady, setIsNavigationReady] = useState(false);
@@ -390,19 +466,13 @@ export default function App() {
   }
 
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-          {location && (
-            <Stack.Screen
-              name="Map"
-              component={MapScreen}
-              initialParams={{ location }}
-            />
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </ClerkProvider>
+    <SafeAreaProvider>
+      <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+        <StatusBar style="dark" />
+        <NavigationContainer>
+          <AuthNavigator />
+        </NavigationContainer>
+      </ClerkProvider>
+    </SafeAreaProvider>
   );
 }

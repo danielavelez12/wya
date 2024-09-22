@@ -1,8 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
-import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import MapView, { PROVIDER_GOOGLE, Marker } from "react-native-maps";
+import { collection, getDocs, getFirestore } from "firebase/firestore";
+import React, { useEffect, useRef, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 const CustomMarker = ({ firstName }) => (
   <View style={styles.markerContainer}>
