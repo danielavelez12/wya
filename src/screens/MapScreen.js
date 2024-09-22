@@ -71,7 +71,7 @@ const MapScreen = ({ route }) => {
     {
       featureType: "landscape",
       elementType: "geometry",
-      stylers: [{ color: "#F6EACB" }],
+      stylers: [{ color: "#FAEBD7" }],
     },
     {
       featureType: "landscape",
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bubble: {
-    backgroundColor: "#EECAD5",
+    backgroundColor: "#CD5C5C",
     borderRadius: 20,
     padding: 10,
     alignItems: "center",
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 20,
-    backgroundColor: "#EECAD5",
+    backgroundColor: "#CD5C5C",
     padding: 10,
     borderRadius: 5,
   },

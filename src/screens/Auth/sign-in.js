@@ -1,11 +1,18 @@
 import { useSignIn } from "@clerk/clerk-expo";
-import { Link, useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
-  const router = useRouter();
+  const navigation = useNavigation();
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [pendingVerification, setPendingVerification] = useState(false);
@@ -54,64 +61,105 @@ export default function SignInScreen() {
 
       if (completeSignIn.status === "complete") {
         await setActive({ session: completeSignIn.createdSessionId });
-        router.replace("/");
+        navigation.replace("/");
       } else {
         console.error(JSON.stringify(completeSignIn, null, 2));
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
     }
-  }, [isLoaded, code, signIn, setActive, router]);
+  }, [isLoaded, code, signIn, setActive, navigation]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Rabbitholers</Text>
       {!pendingVerification ? (
-        <>
+        <View>
+          <Text style={styles.label}>Phone Number</Text>
           <TextInput
+            style={styles.input}
             autoCapitalize="none"
             keyboardType="phone-pad"
             value={phoneNumber}
-            placeholder="Phone Number..."
+            placeholder="Enter your phone number"
             onChangeText={(phoneNumber) => setPhoneNumber(phoneNumber)}
-            style={styles.input}
           />
-          <Button title="Sign In" onPress={onSignInPress} />
-        </>
+          <TouchableOpacity style={styles.button} onPress={onSignInPress}>
+            <Text style={styles.buttonText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
-        <>
+        <View>
+          <Text style={styles.label}>Verification Code</Text>
           <TextInput
+            style={styles.input}
             value={code}
-            placeholder="Verification Code..."
+            placeholder="Enter verification code"
             keyboardType="numeric"
             onChangeText={(code) => setCode(code)}
-            style={styles.input}
           />
-          <Button title="Verify Phone Number" onPress={onPressVerify} />
-        </>
+          <TouchableOpacity style={styles.button} onPress={onPressVerify}>
+            <Text style={styles.buttonText}>Verify Phone Number</Text>
+          </TouchableOpacity>
+        </View>
       )}
-      <View>
-        <Text>Don't have an account?</Text>
-        <Link href="/sign-up">
-          <Text>Sign up</Text>
-        </Link>
+      <View style={styles.signUpContainer}>
+        <Text style={styles.signUpText}>Don't have an account?</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+          <Text style={styles.signUpLink}>Sign up</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
+    backgroundColor: "#FFF8DC",
+    padding: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#8B4513",
+    textAlign: "center",
+    marginBottom: 40,
+  },
+  label: {
+    fontSize: 16,
+    color: "#8B4513",
+    marginBottom: 5,
   },
   input: {
-    width: "100%",
+    backgroundColor: "#FAEBD7",
+    borderRadius: 8,
     padding: 10,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: "gray",
-    borderRadius: 5,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: "#DEB887",
+    borderRadius: 8,
+    padding: 15,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  signUpContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  signUpText: {
+    color: "#8B4513",
+    marginRight: 5,
+  },
+  signUpLink: {
+    color: "#DEB887",
+    fontWeight: "bold",
   },
 });

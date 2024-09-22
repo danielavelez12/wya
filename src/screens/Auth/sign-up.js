@@ -1,7 +1,8 @@
 import { useAuth, useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -11,6 +12,9 @@ export default function SignUpScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
+  const [verified, setVerified] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
     if (isSignedIn) {
@@ -57,7 +61,7 @@ export default function SignUpScreen() {
 
       if (completeSignUp.status === "complete") {
         await setActive({ session: completeSignUp.createdSessionId });
-        router.replace("/");
+        setVerified(true);
       } else {
         console.error("Verification not complete:", completeSignUp);
       }
@@ -83,58 +87,136 @@ export default function SignUpScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>RabbitHolers</Text>
       {isSignedIn ? (
         <>
-          <Text>You are already signed in.</Text>
-          <Button title="Sign Out" onPress={onSignOutPress} />
+          <Text style={styles.label}>You are already signed in.</Text>
+          <TouchableOpacity style={styles.button} onPress={onSignOutPress}>
+            <Text style={styles.buttonText}>Sign Out</Text>
+          </TouchableOpacity>
         </>
       ) : (
         <>
           {!pendingVerification && (
             <>
+              <Text style={styles.label}>Phone Number</Text>
               <TextInput
-                autoCapitalize="none"
+                style={styles.input}
                 value={phoneNumber}
-                placeholder="Phone Number..."
+                placeholder="Enter your phone number"
                 keyboardType="phone-pad"
                 onChangeText={(phone) => setPhoneNumber(phone)}
-                style={styles.input}
               />
-              <Button title="Sign Up" onPress={onSignUpPress} />
+              <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
+                <Text style={styles.buttonText}>Continue</Text>
+              </TouchableOpacity>
             </>
           )}
-          {pendingVerification && (
+          {pendingVerification && !name && !email && (
             <>
+              <Text style={styles.label}>Verification Code</Text>
               <TextInput
+                style={styles.input}
                 value={code}
-                placeholder="Verification Code..."
+                placeholder="Enter verification code"
                 keyboardType="numeric"
                 onChangeText={(code) => setCode(code)}
-                style={styles.input}
               />
-              <Button title="Verify Phone Number" onPress={onPressVerify} />
+              <TouchableOpacity style={styles.button} onPress={onPressVerify}>
+                <Text style={styles.buttonText}>Verify</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          {verified && (
+            <>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter your name"
+              />
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+              />
+              <TouchableOpacity
+                style={styles.button}
+                onPress={onCompleteSignUp}
+              >
+                <Text style={styles.buttonText}>Complete Sign Up</Text>
+              </TouchableOpacity>
             </>
           )}
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
+
+const onCompleteSignUp = async () => {
+  if (!isLoaded) {
+    console.log("Clerk is not loaded");
+    return;
+  }
+
+  try {
+    const completeSignUp = await signUp.update({
+      firstName: name.split(" ")[0],
+      lastName: name.split(" ").slice(1).join(" "),
+      emailAddress: email,
+    });
+
+    if (completeSignUp.status === "complete") {
+      await setActive({ session: completeSignUp.createdSessionId });
+      router.replace("/");
+    } else {
+      console.error("Sign up not complete:", completeSignUp);
+    }
+  } catch (err) {
+    console.error("Error during sign up completion:", err.message);
+  }
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
+    backgroundColor: "#FFF8DC",
+    padding: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#8B4513",
+    textAlign: "center",
+    marginBottom: 40,
+  },
+  label: {
+    fontSize: 16,
+    color: "#8B4513",
+    marginBottom: 5,
   },
   input: {
-    width: "100%",
+    backgroundColor: "#FAEBD7",
+    borderRadius: 8,
     padding: 10,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: "gray",
-    borderRadius: 5,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: "#DEB887",
+    borderRadius: 8,
+    padding: 15,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });

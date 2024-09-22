@@ -19,6 +19,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { createUser, loginOrSignup, updateLastLocation } from "./src/api";
 import SignInScreen from "./src/screens/Auth/sign-in";
+import SignUpScreen from "./src/screens/Auth/sign-up";
 import MapScreen from "./src/screens/MapScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 
@@ -123,7 +124,10 @@ function AuthNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isSignedIn ? (
-        <Stack.Screen name="SignIn" component={SignInScreen} />
+        <>
+          <Stack.Screen name="SignIn" component={SignInScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+        </>
       ) : (
         <Stack.Screen name="Main">
           {() => (
