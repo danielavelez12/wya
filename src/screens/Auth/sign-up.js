@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { createUser } from "../../api";
+
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut, isSignedIn } = useAuth();
@@ -15,6 +17,8 @@ export default function SignUpScreen() {
   const [verified, setVerified] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+
+  const [sessionId, setSessionId] = useState(null);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -60,8 +64,8 @@ export default function SignUpScreen() {
       console.log("Verification response:", completeSignUp);
 
       if (completeSignUp.status === "complete") {
-        await setActive({ session: completeSignUp.createdSessionId });
         setVerified(true);
+        setSessionId(completeSignUp.createdSessionId);
       } else {
         console.error("Verification not complete:", completeSignUp);
       }
@@ -85,6 +89,13 @@ export default function SignUpScreen() {
   if (!isLoaded) {
     return <Text>Loading...</Text>;
   }
+
+  const onCompleteSignUp = async () => {
+    await setActive({ session: sessionId });
+    setVerified(true);
+    router.replace("/");
+    await createUser(phoneNumber, name, email);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -113,7 +124,7 @@ export default function SignUpScreen() {
               </TouchableOpacity>
             </>
           )}
-          {pendingVerification && !name && !email && (
+          {pendingVerification && !verified && (
             <>
               <Text style={styles.label}>Verification Code</Text>
               <TextInput
@@ -149,7 +160,7 @@ export default function SignUpScreen() {
                 style={styles.button}
                 onPress={onCompleteSignUp}
               >
-                <Text style={styles.buttonText}>Complete Sign Up</Text>
+                <Text style={styles.buttonText}>Complete signup</Text>
               </TouchableOpacity>
             </>
           )}
@@ -158,30 +169,6 @@ export default function SignUpScreen() {
     </SafeAreaView>
   );
 }
-
-const onCompleteSignUp = async () => {
-  if (!isLoaded) {
-    console.log("Clerk is not loaded");
-    return;
-  }
-
-  try {
-    const completeSignUp = await signUp.update({
-      firstName: name.split(" ")[0],
-      lastName: name.split(" ").slice(1).join(" "),
-      emailAddress: email,
-    });
-
-    if (completeSignUp.status === "complete") {
-      await setActive({ session: completeSignUp.createdSessionId });
-      router.replace("/");
-    } else {
-      console.error("Sign up not complete:", completeSignUp);
-    }
-  } catch (err) {
-    console.error("Error during sign up completion:", err.message);
-  }
-};
 
 const styles = StyleSheet.create({
   container: {
