@@ -2,12 +2,14 @@ import { useSignIn } from "@clerk/clerk-expo";
 import { useNavigation } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
+  Image,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import PhoneInput from "react-native-phone-input";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignInScreen() {
@@ -17,6 +19,7 @@ export default function SignInScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const onSignInPress = useCallback(async () => {
     if (!isLoaded) {
@@ -24,6 +27,7 @@ export default function SignInScreen() {
     }
 
     try {
+      console.log({ phoneNumber });
       const { supportedFirstFactors } = await signIn.create({
         identifier: phoneNumber,
       });
@@ -44,7 +48,11 @@ export default function SignInScreen() {
 
       setPendingVerification(true);
     } catch (err) {
-      console.error(JSON.stringify(err, null, 2));
+      if (err.status === 422) {
+        setErrorMessage("Whoops, no account found. Signed up yet?");
+      } else {
+        console.error(JSON.stringify(err, null, 2));
+      }
     }
   }, [isLoaded, phoneNumber, signIn]);
 
@@ -72,18 +80,30 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../../../assets/Logo.png")}
+          style={styles.logo}
+        />
+      </View>
       <Text style={styles.title}>Rabbitholers</Text>
       {!pendingVerification ? (
         <View>
           <Text style={styles.label}>Phone Number</Text>
-          <TextInput
-            style={styles.input}
-            autoCapitalize="none"
-            keyboardType="phone-pad"
-            value={phoneNumber}
-            placeholder="Enter your phone number"
-            onChangeText={(phoneNumber) => setPhoneNumber(phoneNumber)}
-          />
+          <View style={styles.inputContainer}>
+            <PhoneInput
+              style={styles.input}
+              initialCountry="us"
+              value={phoneNumber}
+              onChangePhoneNumber={(displayValue, iso2) =>
+                setPhoneNumber(displayValue)
+              }
+              inputStyle={styles.input}
+            />
+            {errorMessage ? (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            ) : null}
+          </View>
           <TouchableOpacity style={styles.button} onPress={onSignInPress}>
             <Text style={styles.buttonText}>Sign In</Text>
           </TouchableOpacity>
@@ -91,13 +111,15 @@ export default function SignInScreen() {
       ) : (
         <View>
           <Text style={styles.label}>Verification Code</Text>
-          <TextInput
-            style={styles.input}
-            value={code}
-            placeholder="Enter verification code"
-            keyboardType="numeric"
-            onChangeText={(code) => setCode(code)}
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={code}
+              placeholder="Enter verification code"
+              keyboardType="numeric"
+              onChangeText={(code) => setCode(code)}
+            />
+          </View>
           <TouchableOpacity style={styles.button} onPress={onPressVerify}>
             <Text style={styles.buttonText}>Verify Phone Number</Text>
           </TouchableOpacity>
@@ -119,6 +141,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF8DC",
     padding: 20,
   },
+  logoContainer: {
+    height: 100,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logo: {
+    width: 100,
+    height: 100,
+  },
   title: {
     fontSize: 32,
     fontWeight: "bold",
@@ -131,12 +162,14 @@ const styles = StyleSheet.create({
     color: "#8B4513",
     marginBottom: 5,
   },
+  inputContainer: {
+    marginBottom: 20,
+  },
   input: {
+    padding: 10,
+    fontSize: 16,
     backgroundColor: "#FAEBD7",
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 20,
-    fontSize: 16,
   },
   button: {
     backgroundColor: "#DEB887",
@@ -161,5 +194,9 @@ const styles = StyleSheet.create({
   signUpLink: {
     color: "#DEB887",
     fontWeight: "bold",
+  },
+  errorText: {
+    marginTop: 4,
+    color: "gray",
   },
 });

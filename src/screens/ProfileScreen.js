@@ -10,10 +10,8 @@ const ProfileScreen = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      // Handle successful sign out (e.g., navigate to login screen)
     } catch (error) {
       console.error("Error signing out:", error);
-      // Handle sign out error
     }
   };
 

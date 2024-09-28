@@ -1,12 +1,11 @@
 import {
-  getDocs,
-  collection,
-  doc,
-  where,
   addDoc,
+  collection,
+  getDocs,
+  getFirestore,
   query,
   updateDoc,
-  getFirestore,
+  where,
 } from "firebase/firestore";
 
 import app from "../ios/wya/firebaseConfig";
@@ -36,12 +35,16 @@ export async function fetchUsers() {
 export async function updateLastLocation(userID, lat, lon) {
   console.log("updateLastLocation:  starting: ", userID, lat, lon);
   try {
-    const docRef = doc(db, "users", userID);
-    if (docRef.empty) {
+    const docRef = collection(db, "users");
+    const userQuery = query(docRef, where("clerk_user_id", "==", userID));
+    const snapshot = await getDocs(userQuery);
+
+    if (snapshot.empty) {
       console.log("updateLastLocation:  user not found");
       return false;
     } else {
-      await updateDoc(docRef, {
+      const userDoc = snapshot.docs[0];
+      await updateDoc(userDoc.ref, {
         latitude: lat,
         longitude: lon,
       });
@@ -73,13 +76,21 @@ export async function loginOrSignup(phoneNumber) {
   }
 }
 
-export async function createUser(phoneNumber, firstName, lastName) {
+export async function createUser(
+  phoneNumber,
+  firstName,
+  lastName,
+  email,
+  clerkUserID
+) {
   console.log("createUser:  starting");
   try {
     const res = await addDoc(collection(db, "users"), {
       phone_number: phoneNumber,
       first_name: firstName,
       last_name: lastName,
+      email,
+      clerk_user_id: clerkUserID,
     });
     console.log("createUser:  done");
     return res.id;

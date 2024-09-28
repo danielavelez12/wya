@@ -1,7 +1,15 @@
 import { useAuth, useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import PhoneInput from "react-native-phone-input";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { createUser } from "../../api";
@@ -15,8 +23,10 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
   const [verified, setVerified] = useState(false);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [clerkUserID, setClerkUserID] = useState("");
 
   const [sessionId, setSessionId] = useState(null);
 
@@ -66,6 +76,7 @@ export default function SignUpScreen() {
       if (completeSignUp.status === "complete") {
         setVerified(true);
         setSessionId(completeSignUp.createdSessionId);
+        setClerkUserID(completeSignUp.createdUserId);
       } else {
         console.error("Verification not complete:", completeSignUp);
       }
@@ -91,15 +102,21 @@ export default function SignUpScreen() {
   }
 
   const onCompleteSignUp = async () => {
+    await createUser(phoneNumber, firstName, lastName, email, clerkUserID);
     await setActive({ session: sessionId });
     setVerified(true);
     router.replace("/");
-    await createUser(phoneNumber, name, email);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>RabbitHolers</Text>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../../../assets/Logo.png")}
+          style={styles.logo}
+        />
+      </View>
+      <Text style={styles.title}>Create your account</Text>
       {isSignedIn ? (
         <>
           <Text style={styles.label}>You are already signed in.</Text>
@@ -112,12 +129,15 @@ export default function SignUpScreen() {
           {!pendingVerification && (
             <>
               <Text style={styles.label}>Phone Number</Text>
-              <TextInput
+              <PhoneInput
                 style={styles.input}
+                initialCountry="us"
                 value={phoneNumber}
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
-                onChangeText={(phone) => setPhoneNumber(phone)}
+                onChangePhoneNumber={(displayValue, iso2) => {
+                  console.log(displayValue);
+                  setPhoneNumber(displayValue);
+                }}
+                inputStyle={styles.input}
               />
               <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
                 <Text style={styles.buttonText}>Continue</Text>
@@ -141,11 +161,18 @@ export default function SignUpScreen() {
           )}
           {verified && (
             <>
-              <Text style={styles.label}>Name</Text>
+              <Text style={styles.label}>First name</Text>
               <TextInput
                 style={styles.input}
-                value={name}
-                onChangeText={setName}
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Enter your name"
+              />
+              <Text style={styles.label}>Last name</Text>
+              <TextInput
+                style={styles.input}
+                value={lastName}
+                onChangeText={setLastName}
                 placeholder="Enter your name"
               />
               <Text style={styles.label}>Email</Text>
@@ -205,5 +232,14 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  logoContainer: {
+    height: 100,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logo: {
+    width: 100,
+    height: 100,
   },
 });
