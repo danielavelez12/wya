@@ -1,11 +1,36 @@
 import { useAuth } from "@clerk/clerk-expo";
-import React, { useState } from "react";
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import React from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const ProfileScreen = () => {
-  const [showLocation, setShowLocation] = useState(true);
+const avatars = [
+  { name: "bluey", source: require("../../assets/avatars/bluey.png") },
+  { name: "catto", source: require("../../assets/avatars/catto.png") },
+  { name: "greeny", source: require("../../assets/avatars/greeny.png") },
+  { name: "mrfox", source: require("../../assets/avatars/mrfox.png") },
+  { name: "porky", source: require("../../assets/avatars/porky.png") },
+];
+
+const ProfileScreen = ({
+  showLocation,
+  setShowLocation,
+  avatar,
+  setAvatar,
+}) => {
   const { signOut } = useAuth();
+
+  const handleToggle = async (value) => {
+    console.log("switching to ", value);
+    await setShowLocation(value);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -15,21 +40,41 @@ const ProfileScreen = () => {
     }
   };
 
+  const handleAvatarChange = (avatarName) => {
+    setAvatar(avatarName);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      <View style={styles.settingItem}>
-        <Text style={styles.settingLabel}>Show My Location</Text>
-        <Switch
-          trackColor={{ false: "#D2B48C", true: "#DEB887" }}
-          thumbColor={showLocation ? "#8B4513" : "#f4f3f4"}
-          onValueChange={setShowLocation}
-          value={showLocation}
-        />
-      </View>
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutButtonText}>Sign Out</Text>
-      </TouchableOpacity>
+      <ScrollView>
+        <Text style={styles.title}>Profile</Text>
+        <View style={styles.avatarContainer}>
+          {avatars.map((av) => (
+            <TouchableOpacity
+              key={av.name}
+              onPress={() => handleAvatarChange(av.name)}
+              style={[
+                styles.avatarButton,
+                avatar === av.name && styles.selectedAvatar,
+              ]}
+            >
+              <Image source={av.source} style={styles.avatar} />
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.settingItem}>
+          <Text style={styles.settingLabel}>Show My Location</Text>
+          <Switch
+            trackColor={{ false: "#D2B48C", true: "#DEB887" }}
+            thumbColor={showLocation ? "#8B4513" : "#f4f3f4"}
+            onValueChange={handleToggle}
+            value={showLocation}
+          />
+        </View>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -70,6 +115,27 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  avatarContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 20,
+  },
+  avatarButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(139, 69, 19, 0.1)", // Light brown shade
+  },
+  selectedAvatar: {
+    borderWidth: 2,
+    borderColor: "#8B4513",
+  },
+  avatar: {
+    width: 30,
+    height: 50,
   },
 });
 

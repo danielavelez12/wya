@@ -7,71 +7,21 @@ import * as Location from "expo-location";
 import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
 import * as TaskManager from "expo-task-manager";
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { updateLastLocation } from "./src/api";
+import {
+  fetchUserById,
+  updateLastLocation,
+  updateShowLocation,
+  updateUserAvatar,
+} from "./src/api";
 import SignInScreen from "./src/screens/Auth/sign-in";
 import SignUpScreen from "./src/screens/Auth/sign-up";
+import LocationDisabledScreen from "./src/screens/LocationDisabled";
 import MapScreen from "./src/screens/MapScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
-
-const styles = {
-  title: {
-    fontSize: 64,
-    fontWeight: "bold",
-    margin: 24,
-  },
-  home: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  greeting: {
-    fontSize: 24,
-    textAlign: "center",
-  },
-  header: {
-    maxHeight: 150,
-    flex: 1,
-    alignItems: "center",
-  },
-  phoneInput: {
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "gray",
-    borderRadius: 10,
-    padding: 10,
-    marginVertical: 10,
-    width: "80%", // Adjust width as needed
-  },
-  nameInput: {
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "gray",
-    borderRadius: 10,
-    height: 40,
-    marginVertical: 10,
-    padding: 10,
-    width: "100%", // Adjust width as needed
-  },
-  nameInputContainer: {
-    width: "80%",
-  },
-  locationContainer: {
-    borderColor: "gray",
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 10,
-    margin: 10,
-  },
-  subText: {
-    fontSize: 12,
-    color: "gray",
-  },
-};
 
 const Stack = createStackNavigator();
 
@@ -80,14 +30,50 @@ function AuthNavigator({ setUserId }) {
   console.log({ isLoaded, isSignedIn });
 
   const [location, setLocation] = useState(null);
+  const [user, setUser] = useState(null);
   const Tab = createBottomTabNavigator();
+  const [showLocation, setShowLocation] = useState(null);
+  const [avatar, setAvatar] = useState(null);
+
+  const handleShowLocation = useCallback(
+    async (value) => {
+      console.log("handleShowLocation", value);
+      setShowLocation(value);
+      try {
+        const success = await updateShowLocation(userId, value);
+        if (!success) {
+          console.error("Error updating show location:", success);
+        }
+      } catch (error) {
+        console.error("Error updating show location:", error);
+      }
+    },
+    [userId]
+  );
+
+  const handleUpdateAvatar = useCallback(
+    async (avatarName) => {
+      setAvatar(avatarName);
+      console.log("handleUpdateAvatar", avatarName);
+      try {
+        await updateUserAvatar(userId, avatarName);
+      } catch (error) {
+        console.error("Error updating avatar:", error);
+      }
+    },
+    [userId]
+  );
 
   useEffect(() => {
-    (async () => {
+    const initialize = async () => {
       if (isSignedIn) {
         setUserId(userId);
+        // Fetch user data
+        const userData = await fetchUserById(userId);
+        setUser(userData);
+        setShowLocation(userData.show_location);
+        setAvatar(userData.avatar);
       }
-      console.log("App:  useEffect starting");
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         console.log("App:  useEffect:  permission not granted");
@@ -96,13 +82,14 @@ function AuthNavigator({ setUserId }) {
 
       const location = await Location.getCurrentPositionAsync({});
       setLocation(location);
-      console.log("App:  useEffect:  location: ", location);
       await updateLastLocation(
         userId,
         location.coords.latitude,
         location.coords.longitude
       );
-    })();
+    };
+
+    initialize();
   }, [isSignedIn, setUserId, userId]);
 
   if (!isLoaded) {
@@ -123,49 +110,80 @@ function AuthNavigator({ setUserId }) {
       ) : (
         <Stack.Screen name="Main">
           {() => (
-            <>
-              {location && (
-                <Tab.Navigator
-                  screenOptions={({ route }) => ({
-                    tabBarIcon: ({ focused, color, size }) => {
-                      let iconName;
+            <Tab.Navigator
+              screenOptions={({ route }) => ({
+                tabBarIcon: ({ focused, color, size }) => {
+                  let iconName;
 
-                      if (route.name === "Map") {
-                        iconName = focused ? "map" : "map-outline";
-                      } else if (route.name === "Profile") {
-                        iconName = focused
-                          ? "person-circle"
-                          : "person-circle-outline";
-                      }
+                  if (route.name === "Map") {
+                    iconName = focused ? "map" : "map-outline";
+                  } else if (route.name === "Profile") {
+                    iconName = focused
+                      ? "person-circle"
+                      : "person-circle-outline";
+                  }
 
-                      return (
-                        <Ionicons name={iconName} size={size} color={color} />
-                      );
-                    },
-                    tabBarActiveTintColor: "#8B4513",
-                    tabBarInactiveTintColor: "#A0522D",
-                    tabBarStyle: {
-                      backgroundColor: "#FFF8DC",
-                    },
-                    headerStyle: {
-                      backgroundColor: "#FFF8DC",
-                    },
-                    headerTintColor: "#8B4513",
-                  })}
-                >
-                  <Tab.Screen
-                    name="Map"
-                    component={MapScreen}
-                    initialParams={{ location }}
+                  return <Ionicons name={iconName} size={size} color={color} />;
+                },
+                tabBarActiveTintColor: "#8B4513",
+                tabBarInactiveTintColor: "#A0522D",
+                tabBarStyle: {
+                  backgroundColor: "#FFF8DC",
+                },
+                headerStyle: {
+                  backgroundColor: "#FFF8DC",
+                },
+                headerTintColor: "#8B4513",
+              })}
+            >
+              <Tab.Screen
+                name="Map"
+                options={{
+                  tabBarIcon: ({ focused, color, size }) => {
+                    const iconName = focused ? "map" : "map-outline";
+                    return (
+                      <Ionicons name={iconName} size={size} color={color} />
+                    );
+                  },
+                }}
+              >
+                {() =>
+                  showLocation ? (
+                    <MapScreen
+                      location={location}
+                      avatar={avatar}
+                      userId={userId}
+                    />
+                  ) : (
+                    <LocationDisabledScreen
+                      onEnableLocation={handleShowLocation}
+                    />
+                  )
+                }
+              </Tab.Screen>
+              <Tab.Screen
+                name="Profile"
+                options={{
+                  tabBarIcon: ({ focused, color, size }) => {
+                    const iconName = focused
+                      ? "person-circle"
+                      : "person-circle-outline";
+                    return (
+                      <Ionicons name={iconName} size={size} color={color} />
+                    );
+                  },
+                }}
+              >
+                {() => (
+                  <ProfileScreen
+                    showLocation={showLocation}
+                    setShowLocation={handleShowLocation}
+                    avatar={avatar}
+                    setAvatar={handleUpdateAvatar}
                   />
-                  <Tab.Screen
-                    name="Profile"
-                    component={ProfileScreen}
-                    initialParams={{ location }}
-                  />
-                </Tab.Navigator>
-              )}
-            </>
+                )}
+              </Tab.Screen>
+            </Tab.Navigator>
           )}
         </Stack.Screen>
       )}
