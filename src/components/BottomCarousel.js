@@ -21,7 +21,7 @@ const avatars = {
 };
 
 const BottomCarousel = ({ people, onPersonSelect, currentUserId }) => {
-  console.log(people);
+ 
   const visiblePeople = people.filter((person) => person.show_location);
 
   if (visiblePeople.length === 0) {

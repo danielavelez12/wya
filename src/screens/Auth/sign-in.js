@@ -27,7 +27,6 @@ export default function SignInScreen() {
     }
 
     try {
-      console.log({ phoneNumber });
       const { supportedFirstFactors } = await signIn.create({
         identifier: phoneNumber,
       });
@@ -37,10 +36,8 @@ export default function SignInScreen() {
       };
       const phoneCodeFactor = supportedFirstFactors?.find(isPhoneCodeFactor);
 
-      // Grab the phoneNumberId
       const { phoneNumberId } = phoneCodeFactor;
 
-      // Send the OTP code to the user
       await signIn.prepareFirstFactor({
         strategy: "phone_code",
         phoneNumberId,
@@ -69,14 +66,13 @@ export default function SignInScreen() {
 
       if (completeSignIn.status === "complete") {
         await setActive({ session: completeSignIn.createdSessionId });
-        navigation.replace("/");
       } else {
         console.error(JSON.stringify(completeSignIn, null, 2));
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
     }
-  }, [isLoaded, code, signIn, setActive, navigation]);
+  }, [isLoaded, code, signIn, setActive]);
 
   return (
     <SafeAreaView style={styles.container}>

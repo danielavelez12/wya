@@ -12,13 +12,15 @@ import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import {
-  fetchUserById,
   updateLastLocation,
+  updateShowCity,
   updateShowLocation,
   updateUserAvatar,
 } from "./src/api";
+import { UserProvider, useUsers } from "./src/context/UserContext";
 import SignInScreen from "./src/screens/Auth/sign-in";
 import SignUpScreen from "./src/screens/Auth/sign-up";
+import ContactListScreen from "./src/screens/ContactList";
 import LocationDisabledScreen from "./src/screens/LocationDisabled";
 import MapScreen from "./src/screens/MapScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
@@ -27,72 +29,84 @@ const Stack = createStackNavigator();
 
 function AuthNavigator({ setUserId }) {
   const { isLoaded, isSignedIn, userId } = useAuth();
-  console.log({ isLoaded, isSignedIn });
+  const { updateUserPreference, currentUser, initializeCurrentUser } =
+    useUsers();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [location, setLocation] = useState(null);
-  const [user, setUser] = useState(null);
   const Tab = createBottomTabNavigator();
-  const [showLocation, setShowLocation] = useState(null);
-  const [avatar, setAvatar] = useState(null);
 
   const handleShowLocation = useCallback(
     async (value) => {
-      console.log("handleShowLocation", value);
-      setShowLocation(value);
       try {
-        const success = await updateShowLocation(userId, value);
-        if (!success) {
-          console.error("Error updating show location:", success);
-        }
+        await updateShowLocation(userId, value);
+        updateUserPreference(userId, "show_location", value);
       } catch (error) {
         console.error("Error updating show location:", error);
       }
     },
-    [userId]
+    [userId, updateUserPreference]
   );
 
   const handleUpdateAvatar = useCallback(
     async (avatarName) => {
-      setAvatar(avatarName);
-      console.log("handleUpdateAvatar", avatarName);
       try {
         await updateUserAvatar(userId, avatarName);
+        updateUserPreference(userId, "avatar", avatarName);
       } catch (error) {
         console.error("Error updating avatar:", error);
       }
     },
-    [userId]
+    [userId, updateUserPreference]
+  );
+
+  const handleShowCity = useCallback(
+    async (value) => {
+      try {
+        await updateShowCity(userId, value);
+        updateUserPreference(userId, "show_city", value);
+      } catch (error) {
+        console.error("Error updating show city:", error);
+      }
+    },
+    [userId, updateUserPreference]
   );
 
   useEffect(() => {
     const initialize = async () => {
-      if (isSignedIn) {
-        setUserId(userId);
-        // Fetch user data
-        const userData = await fetchUserById(userId);
-        setUser(userData);
-        setShowLocation(userData.show_location);
-        setAvatar(userData.avatar);
-      }
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("App:  useEffect:  permission not granted");
-        return;
-      }
+      try {
+        setIsLoading(true);
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          return;
+        }
+        const location = await Location.getCurrentPositionAsync({});
+        setLocation(location);
 
-      const location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-      await updateLastLocation(
-        userId,
-        location.coords.latitude,
-        location.coords.longitude
-      );
+        if (isSignedIn) {
+          setUserId(userId);
+          const userData = await initializeCurrentUser(userId);
+
+          if (userData?.show_location) {
+            await updateLastLocation(
+              userId,
+              location.coords.latitude,
+              location.coords.longitude
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Initialization error:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     initialize();
-  }, [isSignedIn, setUserId, userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn, setUserId, userId]);
 
-  if (!isLoaded) {
+  if (!isLoaded || isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
@@ -148,10 +162,10 @@ function AuthNavigator({ setUserId }) {
                 }}
               >
                 {() =>
-                  showLocation ? (
+                  currentUser?.show_location ? (
                     <MapScreen
                       location={location}
-                      avatar={avatar}
+                      avatar={currentUser?.avatar}
                       userId={userId}
                     />
                   ) : (
@@ -176,13 +190,27 @@ function AuthNavigator({ setUserId }) {
               >
                 {() => (
                   <ProfileScreen
-                    showLocation={showLocation}
+                    showLocation={currentUser?.show_location}
                     setShowLocation={handleShowLocation}
-                    avatar={avatar}
+                    showCity={currentUser?.show_city}
+                    setShowCity={handleShowCity}
+                    avatar={currentUser?.avatar}
                     setAvatar={handleUpdateAvatar}
                   />
                 )}
               </Tab.Screen>
+              <Tab.Screen
+                name="Contacts"
+                component={ContactListScreen}
+                options={{
+                  tabBarIcon: ({ focused, color, size }) => {
+                    const iconName = focused ? "people" : "people-outline";
+                    return (
+                      <Ionicons name={iconName} size={size} color={color} />
+                    );
+                  },
+                }}
+              />
             </Tab.Navigator>
           )}
         </Stack.Screen>
@@ -198,7 +226,6 @@ export default function App() {
       "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env"
     );
   }
-  console.log("Clerk Publishable Key:", publishableKey);
   const [userId, setUserId] = useState(null);
 
   const tokenCache = {
@@ -206,9 +233,7 @@ export default function App() {
       try {
         const item = await SecureStore.getItemAsync(key);
         if (item) {
-          console.log(`${key} was used 🔐 \n`);
         } else {
-          console.log("No values stored under key: " + key);
         }
         return item;
       } catch (error) {
@@ -220,7 +245,6 @@ export default function App() {
     async saveToken(key, value) {
       try {
         await SecureStore.setItemAsync(key, value);
-        console.log(`Token saved under key: ${key}`);
       } catch (error) {
         console.error("SecureStore set item error: ", error);
       }
@@ -237,7 +261,6 @@ export default function App() {
       }
       const { latitude, longitude } = locations[0].coords;
       try {
-        console.log("fetch_location:  location: ", latitude, longitude);
         await updateLastLocation(userId, latitude, longitude);
       } catch (e) {
         console.error("fetch_location:  error: ", e);
@@ -256,9 +279,7 @@ export default function App() {
   });
 
   Location.hasStartedLocationUpdatesAsync("fetch_location").then((res) => {
-    console.log("hasStartedLocationUpdatesAsync:  ", res);
     if (res) {
-      console.log("hasStartedLocationUpdatesAsync:  stopping");
       Location.stopLocationUpdatesAsync("fetch_location");
     }
   });
@@ -280,10 +301,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-        <StatusBar style="dark" />
-        <NavigationContainer>
-          <AuthNavigator setUserId={setUserId} />
-        </NavigationContainer>
+        <UserProvider>
+          <StatusBar style="dark" />
+          <NavigationContainer>
+            <AuthNavigator setUserId={setUserId} />
+          </NavigationContainer>
+        </UserProvider>
       </ClerkProvider>
     </SafeAreaProvider>
   );

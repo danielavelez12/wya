@@ -27,7 +27,7 @@ export default function PersonModal({ isVisible, onClose, person }) {
     Linking.openURL(`sms:${person.phoneNumber}`);
   };
 
-  console.log(person);
+ 
 
   const formatName = (fullName) => {
     const names = fullName.split(" ");

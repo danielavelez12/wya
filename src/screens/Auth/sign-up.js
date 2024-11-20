@@ -32,13 +32,11 @@ export default function SignUpScreen() {
 
   useEffect(() => {
     if (isSignedIn) {
-      console.log("User is already signed in");
     }
   }, [isSignedIn]);
 
   const onSignUpPress = async () => {
     if (!isLoaded) {
-      console.log("Clerk is not loaded");
       return;
     }
 
@@ -56,7 +54,6 @@ export default function SignUpScreen() {
 
   const onPressVerify = async () => {
     if (!isLoaded) {
-      console.log("Clerk is not loaded");
       return;
     }
 
@@ -66,12 +63,9 @@ export default function SignUpScreen() {
     }
 
     try {
-      console.log("Attempting phone number verification with code:", code);
       const completeSignUp = await signUp.attemptPhoneNumberVerification({
         code,
       });
-
-      console.log("Verification response:", completeSignUp);
 
       if (completeSignUp.status === "complete") {
         setVerified(true);
@@ -134,7 +128,6 @@ export default function SignUpScreen() {
                 initialCountry="us"
                 value={phoneNumber}
                 onChangePhoneNumber={(displayValue, iso2) => {
-                  console.log(displayValue);
                   setPhoneNumber(displayValue);
                 }}
                 inputStyle={styles.input}

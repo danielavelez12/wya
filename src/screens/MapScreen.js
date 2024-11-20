@@ -1,10 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-import { fetchUsers } from "../api"; // Make sure this import is present
 import BottomCarousel from "../components/BottomCarousel";
 import PersonModal from "../components/PersonModal";
+import { useUsers } from "../context/UserContext";
 
 const avatars = {
   bluey: require("../../assets/avatars/bluey.png"),
@@ -26,29 +33,15 @@ const CustomMarker = ({ firstName, avatar }) => (
 );
 
 const MapScreen = ({ location, avatar, userId }) => {
-  const [users, setUsers] = useState([]);
+  const { users, isLoading } = useUsers();
   const [visibleUsers, setVisibleUsers] = useState([]);
   const [isZoomedIn, setIsZoomedIn] = useState(false);
   const mapRef = useRef(null);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  useEffect(() => {
-    const fetchUsersData = async () => {
-      try {
-        const usersList = await fetchUsers();
-        setUsers(usersList);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-
-    fetchUsersData();
-  }, []);
-
   const toggleZoom = () => {
     setIsZoomedIn(!isZoomedIn);
     if (isZoomedIn) {
-      // Zoom out to US
       mapRef.current.animateToRegion(
         {
           latitude: 37.0902,
@@ -59,7 +52,6 @@ const MapScreen = ({ location, avatar, userId }) => {
         1000
       );
     } else {
-      // Zoom in to user's location
       mapRef.current.animateToRegion(
         {
           latitude: location.coords.latitude,
@@ -173,6 +165,14 @@ const MapScreen = ({ location, avatar, userId }) => {
       stylers: [{ visibility: "off" }],
     },
   ];
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

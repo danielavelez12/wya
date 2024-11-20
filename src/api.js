@@ -1,79 +1,44 @@
-import {
-  addDoc,
-  collection,
-  getDocs,
-  getFirestore,
-  query,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-
-import app from "../ios/wya/firebaseConfig";
-
-const db = getFirestore(app);
+const API_URL = "http://localhost:8400/api";
 
 export async function fetchUsers() {
-  console.log("fetchUsers:  starting");
-  let querySnapshot = null;
   try {
-    const docRef = collection(db, "users");
-    querySnapshot = await getDocs(docRef);
+    const response = await fetch(`${API_URL}/users`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
   } catch (e) {
     console.error("fetchUsers: error fetching users: ", e);
+    return [];
   }
-  console.log("fetchUsers:  got data");
-  const usersList = [];
-  querySnapshot.forEach((doc) => {
-    // doc.data() is never undefined for query doc snapshots
-    console.log(doc.id, " => ", doc.data());
-    usersList.push({ id: doc.id, ...doc.data() });
-  });
-  console.log(usersList);
-  return usersList;
 }
 
 export async function updateLastLocation(userID, lat, lon) {
-  console.log("updateLastLocation:  starting: ", userID, lat, lon);
   try {
-    const docRef = collection(db, "users");
-    const userQuery = query(docRef, where("clerk_user_id", "==", userID));
-    const snapshot = await getDocs(userQuery);
-
-    if (snapshot.empty) {
-      console.log("updateLastLocation:  user not found");
-      return false;
-    } else {
-      const userDoc = snapshot.docs[0];
-      await updateDoc(userDoc.ref, {
-        latitude: lat,
-        longitude: lon,
-        last_updated: new Date().toISOString(),
-      });
-      console.log("updateLastLocation:  done");
-    }
+    console.log({ userID, lat, lon });
+    const response = await fetch(`${API_URL}/users/location`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userID, lat, lon }),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
   } catch (e) {
     console.error("updateLastLocation: error updating location: ", e);
+    return false;
   }
 }
 
 export async function loginOrSignup(phoneNumber) {
-  console.log("loginOrSignup:  starting with phonenumber: ", phoneNumber);
   try {
-    const docRef = collection(db, "users");
-    const phoneNumberQuery = query(
-      docRef,
-      where("phone_number", "==", phoneNumber)
-    );
-    const snapshot = await getDocs(phoneNumberQuery);
-    if (snapshot.empty) {
-      console.log("loginOrSignup:  user not found, creating user");
-      return false;
-    } else {
-      console.log("loginOrSignup:  user found");
-      return { data: snapshot.docs[0].data(), id: snapshot.docs[0].id };
-    }
+    const response = await fetch(`${API_URL}/users/phone/${phoneNumber}`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const result = await response.json();
+    if (!result.exists) return false;
+    return { data: result.data, id: result.id };
   } catch (e) {
     console.error("loginOrSignup: error fetching user: ", e);
+    return false;
   }
 }
 
@@ -84,41 +49,40 @@ export async function createUser(
   email,
   clerkUserID
 ) {
-  console.log("createUser:  starting");
   try {
-    const res = await addDoc(collection(db, "users"), {
-      phone_number: phoneNumber,
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      clerk_user_id: clerkUserID,
+    const response = await fetch(`${API_URL}/users/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phoneNumber,
+        firstName,
+        lastName,
+        email,
+        clerkUserID,
+      }),
     });
-    console.log("createUser:  done");
-    return res.id;
+    if (!response.ok) throw new Error("Network response was not ok");
+    const result = await response.json();
+    return result.id;
   } catch (e) {
     console.error("createUser: error creating user: ", e);
+    return null;
   }
 }
 
 export async function updateShowLocation(userID, showLocation) {
-  console.log("updateShowLocation: starting:", userID, showLocation);
   try {
-    const docRef = collection(db, "users");
-    const userQuery = query(docRef, where("clerk_user_id", "==", userID));
-    const snapshot = await getDocs(userQuery);
-
-    if (snapshot.empty) {
-      console.log("updateShowLocation: user not found");
-      return false;
-    } else {
-      console.log({ showLocation });
-      const userDoc = snapshot.docs[0];
-      await updateDoc(userDoc.ref, {
-        show_location: showLocation,
-      });
-      console.log("updateShowLocation: done");
-      return true;
-    }
+    const response = await fetch(`${API_URL}/users/${userID}/show-location`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ showLocation }),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return true;
   } catch (e) {
     console.error("updateShowLocation: error updating show_location:", e);
     return false;
@@ -126,20 +90,10 @@ export async function updateShowLocation(userID, showLocation) {
 }
 
 export async function fetchUserById(userId) {
-  console.log("fetchUserById: starting with userId:", userId);
   try {
-    const docRef = collection(db, "users");
-    const userQuery = query(docRef, where("clerk_user_id", "==", userId));
-    const snapshot = await getDocs(userQuery);
-
-    if (snapshot.empty) {
-      console.log("fetchUserById: user not found");
-      return null;
-    } else {
-      const userDoc = snapshot.docs[0];
-      console.log("fetchUserById: user found");
-      return { id: userDoc.id, ...userDoc.data() };
-    }
+    const response = await fetch(`${API_URL}/users/${userId}`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
   } catch (e) {
     console.error("fetchUserById: error fetching user:", e);
     return null;
@@ -147,25 +101,46 @@ export async function fetchUserById(userId) {
 }
 
 export async function updateUserAvatar(userID, avatarName) {
-  console.log("updateUserAvatar: starting:", userID, avatarName);
   try {
-    const docRef = collection(db, "users");
-    const userQuery = query(docRef, where("clerk_user_id", "==", userID));
-    const snapshot = await getDocs(userQuery);
-
-    if (snapshot.empty) {
-      console.log("updateUserAvatar: user not found");
-      return false;
-    } else {
-      const userDoc = snapshot.docs[0];
-      await updateDoc(userDoc.ref, {
-        avatar: avatarName,
-      });
-      console.log("updateUserAvatar: done");
-      return true;
-    }
+    const response = await fetch(`${API_URL}/users/${userID}/avatar`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ avatarName }),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return true;
   } catch (e) {
     console.error("updateUserAvatar: error updating avatar:", e);
+    return false;
+  }
+}
+
+export async function fetchAllUsers() {
+  try {
+    const response = await fetch(`${API_URL}/users`);
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
+  } catch (e) {
+    console.error("fetchAllUsers: error fetching all users:", e);
+    return [];
+  }
+}
+
+export async function updateShowCity(userID, showCity) {
+  try {
+    const response = await fetch(`${API_URL}/users/${userID}/show-city`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ showCity }),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return true;
+  } catch (e) {
+    console.error("updateShowCity: error updating show_city:", e);
     return false;
   }
 }

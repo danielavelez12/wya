@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useUsers } from "../context/UserContext";
+
 const avatars = [
   { name: "bluey", source: require("../../assets/avatars/bluey.png") },
   { name: "catto", source: require("../../assets/avatars/catto.png") },
@@ -22,14 +24,22 @@ const avatars = [
 const ProfileScreen = ({
   showLocation,
   setShowLocation,
+  showCity,
+  setShowCity,
   avatar,
   setAvatar,
 }) => {
-  const { signOut } = useAuth();
+  const { updateUserPreference } = useUsers();
+  const { signOut, userId } = useAuth();
 
   const handleToggle = async (value) => {
-    console.log("switching to ", value);
     await setShowLocation(value);
+    updateUserPreference(userId, "show_location", value);
+  };
+
+  const handleCityToggle = async (value) => {
+    await setShowCity(value);
+    updateUserPreference(userId, "show_city", value);
   };
 
   const handleSignOut = async () => {
@@ -40,8 +50,9 @@ const ProfileScreen = ({
     }
   };
 
-  const handleAvatarChange = (avatarName) => {
-    setAvatar(avatarName);
+  const handleAvatarChange = async (avatarName) => {
+    await setAvatar(avatarName);
+    updateUserPreference(userId, "avatar", avatarName);
   };
 
   return (
@@ -63,12 +74,23 @@ const ProfileScreen = ({
           ))}
         </View>
         <View style={styles.settingItem}>
-          <Text style={styles.settingLabel}>Show My Location</Text>
+          <Text style={styles.settingLabel}>Show my location on the map</Text>
           <Switch
             trackColor={{ false: "#D2B48C", true: "#DEB887" }}
             thumbColor={showLocation ? "#8B4513" : "#f4f3f4"}
             onValueChange={handleToggle}
             value={showLocation}
+          />
+        </View>
+        <View style={styles.settingItem}>
+          <Text style={styles.settingLabel}>
+            Show my city on the contact list
+          </Text>
+          <Switch
+            trackColor={{ false: "#D2B48C", true: "#DEB887" }}
+            thumbColor={showCity ? "#8B4513" : "#f4f3f4"}
+            onValueChange={handleCityToggle}
+            value={showCity}
           />
         </View>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
@@ -109,7 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
   },
   signOutButtonText: {
     color: "#FFF",
