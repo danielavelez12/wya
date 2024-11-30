@@ -1,13 +1,30 @@
-import { MaterialIcons } from "@expo/vector-icons";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
-import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import MapView, { PROVIDER_GOOGLE, Marker } from "react-native-maps";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-const CustomMarker = ({ firstName }) => (
+import BottomCarousel from "../components/BottomCarousel";
+import PersonModal from "../components/PersonModal";
+import { useUsers } from "../context/UserContext";
+
+const avatars = {
+  bluey: require("../../assets/avatars/bluey.png"),
+  catto: require("../../assets/avatars/catto.png"),
+  greeny: require("../../assets/avatars/greeny.png"),
+  mrfox: require("../../assets/avatars/mrfox.png"),
+  porky: require("../../assets/avatars/porky.png"),
+};
+
+const CustomMarker = ({ firstName, avatar }) => (
   <View style={styles.markerContainer}>
     <View style={styles.bubble}>
-      <MaterialIcons name="person" size={24} color="#FFFFFF" />
+      <Image source={avatars[avatar] || avatars.bluey} style={styles.avatar} />
     </View>
     <View style={styles.labelBackground}>
       <Text style={styles.markerText}>{firstName}</Text>
@@ -15,31 +32,16 @@ const CustomMarker = ({ firstName }) => (
   </View>
 );
 
-const MapScreen = ({ route }) => {
-  const [users, setUsers] = useState([]);
+const MapScreen = ({ location, avatar, userId }) => {
+  const { users, isLoading } = useUsers();
+  const [visibleUsers, setVisibleUsers] = useState([]);
   const [isZoomedIn, setIsZoomedIn] = useState(false);
   const mapRef = useRef(null);
-  const { location } = route.params;
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const db = getFirestore();
-      const usersCollection = collection(db, "users");
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersList = usersSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setUsers(usersList);
-    };
-
-    fetchUsers();
-  }, []);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const toggleZoom = () => {
     setIsZoomedIn(!isZoomedIn);
     if (isZoomedIn) {
-      // Zoom out to US
       mapRef.current.animateToRegion(
         {
           latitude: 37.0902,
@@ -50,7 +52,6 @@ const MapScreen = ({ route }) => {
         1000
       );
     } else {
-      // Zoom in to user's location
       mapRef.current.animateToRegion(
         {
           latitude: location.coords.latitude,
@@ -63,6 +64,31 @@ const MapScreen = ({ route }) => {
     }
   };
 
+  const onRegionChangeComplete = (region) => {
+    const newVisibleUsers = users.filter((user) => {
+      const lat = parseFloat(user.latitude);
+      const lng = parseFloat(user.longitude);
+      return (
+        lat >= region.latitude - region.latitudeDelta / 2 &&
+        lat <= region.latitude + region.latitudeDelta / 2 &&
+        lng >= region.longitude - region.longitudeDelta / 2 &&
+        lng <= region.longitude + region.longitudeDelta / 2
+      );
+    });
+    setVisibleUsers(newVisibleUsers);
+  };
+
+  const handleMarkerPress = (user) => {
+    setSelectedUser(user);
+  };
+
+  const handlePersonSelect = (person) => {
+    const selectedUser = visibleUsers.find(
+      (user) => user.first_name + " " + user.last_name === person.name
+    );
+    setSelectedUser(selectedUser);
+  };
+
   const mapStyle = [
     {
       elementType: "geometry",
@@ -71,7 +97,7 @@ const MapScreen = ({ route }) => {
     {
       featureType: "landscape",
       elementType: "geometry",
-      stylers: [{ color: "#F6EACB" }],
+      stylers: [{ color: "#FAEBD7" }],
     },
     {
       featureType: "landscape",
@@ -140,6 +166,14 @@ const MapScreen = ({ route }) => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <MapView
@@ -153,8 +187,11 @@ const MapScreen = ({ route }) => {
           latitudeDelta: 60,
           longitudeDelta: 60,
         }}
+        padding={{ bottom: 100 }} // Add padding to the bottom of the map
+        onRegionChangeComplete={onRegionChangeComplete}
       >
         {users.map((user) => {
+          if (!user.show_location) return null; // Skip users who don't want to show their location
           const lat = parseFloat(user.latitude);
           const lng = parseFloat(user.longitude);
           if (isNaN(lat) || isNaN(lng)) return null; // Skip invalid coordinates
@@ -166,8 +203,12 @@ const MapScreen = ({ route }) => {
                 latitude: lat + (Math.random() - 0.5) * 0.0001,
                 longitude: lng + (Math.random() - 0.5) * 0.0001,
               }}
+              onPress={() => handleMarkerPress(user)}
             >
-              <CustomMarker firstName={user.first_name} />
+              <CustomMarker
+                firstName={user.first_name}
+                avatar={user.clerk_user_id === userId ? avatar : user.avatar}
+              />
             </Marker>
           );
         })}
@@ -177,6 +218,30 @@ const MapScreen = ({ route }) => {
           {isZoomedIn ? "Zoom Out" : "Zoom In"}
         </Text>
       </TouchableOpacity>
+      <PersonModal
+        isVisible={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+        person={{
+          name: selectedUser?.first_name + " " + selectedUser?.last_name,
+          phoneNumber: selectedUser?.phone_number,
+          email: selectedUser?.email,
+          lastUpdated: selectedUser?.last_updated,
+          avatar:
+            selectedUser?.clerk_user_id === userId
+              ? avatar
+              : selectedUser?.avatar,
+        }}
+      />
+      <BottomCarousel
+        people={visibleUsers.map((user) => ({
+          id: user.id,
+          name: `${user.first_name} ${user.last_name}`,
+          avatar: user.clerk_user_id === userId ? avatar : user.avatar,
+          show_location: user.show_location,
+        }))}
+        onPersonSelect={handlePersonSelect}
+        currentUserId={userId}
+      />
     </View>
   );
 };
@@ -194,9 +259,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bubble: {
-    backgroundColor: "#EECAD5",
-    borderRadius: 20,
-    padding: 10,
+    backgroundColor: "rgba(139, 69, 19, 0.1)", // Light brown shade, matching ProfileScreen
+    borderRadius: 30, // Make it completely round
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -215,13 +281,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 20,
-    backgroundColor: "#EECAD5",
+    backgroundColor: "#CD5C5C",
     padding: 10,
     borderRadius: 5,
   },
   toggleButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  avatar: {
+    width: 20,
+    height: 30,
   },
 });
 
