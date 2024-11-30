@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node api.ts"
+    "dev": "ts-node api.ts",
+    "build": "tsc",
+    "start": "node dist/api.js"
   },
   "keywords": [],
   "author": "",
