@@ -24,6 +24,7 @@ import ContactListScreen from "./src/screens/ContactList";
 import LocationDisabledScreen from "./src/screens/LocationDisabled";
 import MapScreen from "./src/screens/MapScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+import TestAccountScreen from "./src/screens/TestAccount";
 
 const Stack = createStackNavigator();
 
@@ -120,6 +121,7 @@ function AuthNavigator({ setUserId }) {
         <>
           <Stack.Screen name="SignIn" component={SignInScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="TestAccount" component={TestAccountScreen} />
         </>
       ) : (
         <Stack.Screen name="Main">

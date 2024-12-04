@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8400/api";
+const API_URL = "https://wya.onrender.com/api";
 
 export async function fetchUsers() {
   try {
@@ -142,5 +142,22 @@ export async function updateShowCity(userID, showCity) {
   } catch (e) {
     console.error("updateShowCity: error updating show_city:", e);
     return false;
+  }
+}
+
+export async function loginWithCredentials(username, password) {
+  try {
+    const response = await fetch(`${API_URL}/users/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return await response.json();
+  } catch (e) {
+    console.error("loginWithCredentials: error logging in:", e);
+    return null;
   }
 }

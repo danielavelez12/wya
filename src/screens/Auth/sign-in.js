@@ -127,6 +127,11 @@ export default function SignInScreen() {
           <Text style={styles.signUpLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
+      <View style={[styles.testAccountContainer, styles.testAccountPosition]}>
+        <TouchableOpacity onPress={() => navigation.navigate("TestAccount")}>
+          <Text style={styles.testAccountLink}>Test account</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -194,5 +199,18 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 4,
     color: "gray",
+  },
+  testAccountContainer: {
+    alignItems: "center",
+  },
+  testAccountPosition: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+  },
+  testAccountLink: {
+    color: "#8B4513",
+    textDecorationLine: "underline",
   },
 });
