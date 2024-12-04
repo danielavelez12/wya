@@ -229,6 +229,69 @@ app.patch(
   }
 );
 
+app.get("/api/privacy-policy", (_req: Request, res: Response) => {
+  const privacyPolicy = `Privacy Policy for RabbitHolers
+
+Last Updated: December 3, 2024
+
+Introduction
+Welcome to RabbitHolers. This privacy policy explains how we collect, use, and protect your personal information when you use our app.
+
+Information We Collect
+We collect the following types of information to provide and improve our service:
+
+1. Contact Information
+   - Name
+   - Phone Number
+   These are used for app functionality and are linked to your user identity.
+
+2. Location Data
+   - Precise Location
+   This is used for app functionality and is linked to your user identity.
+
+How We Use Your Information
+We use the collected information for:
+- Providing core app functionality
+- Identifying and authenticating users
+- Enabling location-based features
+
+Data Storage and Security
+- We implement appropriate security measures to protect your personal information
+- Data is stored securely and accessed only when necessary for app functionality
+- We retain your data only for as long as necessary to provide our services
+
+Data Sharing and Disclosure
+We do not sell your personal information. We may share your information only:
+- When required by law
+- To protect our rights or property
+- With your explicit consent
+
+Your Rights
+You have the right to:
+- Access your personal data
+- Request correction of your data
+- Request deletion of your data
+- Withdraw consent for data collection
+
+California Privacy Rights
+Under California Civil Code Section 1798.83, California residents are entitled to specific rights regarding their personal information. You may contact us to exercise these rights.
+
+Children's Privacy
+Our service is not directed to children under 13. We do not knowingly collect information from children under 13.
+
+Changes to This Privacy Policy
+We may update this privacy policy periodically. Users will be notified of any material changes.
+
+Contact Us
+If you have questions about this Privacy Policy, please contact us at:
+danielavelez1201@gmail.com
+
+Consent
+By using RabbitHolers, you consent to our collection and use of your information as described in this Privacy Policy.`;
+
+  res.send(privacyPolicy);
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
