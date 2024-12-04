@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { initializeApp } from "firebase/app";
 import {
   addDoc,
@@ -30,13 +31,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/users", async (req, res) => {
+interface User {
+  id?: string;
+  phone_number: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  clerk_user_id: string;
+  latitude?: number;
+  longitude?: number;
+  last_updated?: string;
+  show_location?: boolean;
+  show_city?: boolean;
+  avatar?: string;
+}
+
+app.get("/api/users", async (req: Request, res: Response) => {
   try {
     const usersRef = collection(db, "users");
     const snapshot = await getDocs(usersRef);
-    const users = [];
+    const users: User[] = [];
     snapshot.forEach((doc) => {
-      users.push({ id: doc.id, ...doc.data() });
+      users.push({ id: doc.id, ...(doc.data() as Omit<User, "id">) });
     });
     res.json(users);
   } catch (error) {
@@ -45,7 +61,7 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-app.post("/api/users/location", async (req, res) => {
+app.post("/api/users/location", async (req: Request, res: Response) => {
   const { userID, lat, lon } = req.body;
   console.log(userID, lat, lon);
   try {
@@ -72,7 +88,7 @@ app.post("/api/users/location", async (req, res) => {
   }
 });
 
-app.post("/api/users/signup", async (req, res) => {
+app.post("/api/users/signup", async (req: Request, res: Response) => {
   const { phoneNumber, firstName, lastName, email, clerkUserID } = req.body;
   try {
     const usersRef = collection(db, "users");
@@ -90,30 +106,33 @@ app.post("/api/users/signup", async (req, res) => {
   }
 });
 
-app.get("/api/users/phone/:phoneNumber", async (req, res) => {
-  try {
-    const usersRef = collection(db, "users");
-    const userQuery = await getDocs(
-      query(usersRef, where("phone_number", "==", req.params.phoneNumber))
-    );
+app.get(
+  "/api/users/phone/:phoneNumber",
+  async (req: Request, res: Response) => {
+    try {
+      const usersRef = collection(db, "users");
+      const userQuery = await getDocs(
+        query(usersRef, where("phone_number", "==", req.params.phoneNumber))
+      );
 
-    if (userQuery.empty) {
-      res.json({ exists: false });
-    } else {
-      const userDoc = userQuery.docs[0];
-      res.json({
-        exists: true,
-        data: userDoc.data(),
-        id: userDoc.id,
-      });
+      if (userQuery.empty) {
+        res.json({ exists: false });
+      } else {
+        const userDoc = userQuery.docs[0];
+        res.json({
+          exists: true,
+          data: userDoc.data(),
+          id: userDoc.id,
+        });
+      }
+    } catch (error) {
+      console.error("Error checking phone number:", error);
+      res.status(500).json({ error: "Failed to check phone number" });
     }
-  } catch (error) {
-    console.error("Error checking phone number:", error);
-    res.status(500).json({ error: "Failed to check phone number" });
   }
-});
+);
 
-app.get("/api/users/:userId", async (req, res) => {
+app.get("/api/users/:userId", async (req: Request, res: Response) => {
   console.log("calling by user id, ", req.params.userId);
   try {
     const usersRef = collection(db, "users");
@@ -133,30 +152,33 @@ app.get("/api/users/:userId", async (req, res) => {
   }
 });
 
-app.patch("/api/users/:userId/show-location", async (req, res) => {
-  const { showLocation } = req.body;
-  try {
-    const usersRef = collection(db, "users");
-    const userQuery = await getDocs(
-      query(usersRef, where("clerk_user_id", "==", req.params.userId))
-    );
+app.patch(
+  "/api/users/:userId/show-location",
+  async (req: Request, res: Response) => {
+    const { showLocation } = req.body;
+    try {
+      const usersRef = collection(db, "users");
+      const userQuery = await getDocs(
+        query(usersRef, where("clerk_user_id", "==", req.params.userId))
+      );
 
-    if (userQuery.empty) {
-      res.status(404).json({ error: "User not found" });
-    } else {
-      const userDoc = userQuery.docs[0];
-      await updateDoc(userDoc.ref, {
-        show_location: showLocation,
-      });
-      res.json({ success: true });
+      if (userQuery.empty) {
+        res.status(404).json({ error: "User not found" });
+      } else {
+        const userDoc = userQuery.docs[0];
+        await updateDoc(userDoc.ref, {
+          show_location: showLocation,
+        });
+        res.json({ success: true });
+      }
+    } catch (error) {
+      console.error("Error updating show location:", error);
+      res.status(500).json({ error: "Failed to update show location" });
     }
-  } catch (error) {
-    console.error("Error updating show location:", error);
-    res.status(500).json({ error: "Failed to update show location" });
   }
-});
+);
 
-app.patch("/api/users/:userId/avatar", async (req, res) => {
+app.patch("/api/users/:userId/avatar", async (req: Request, res: Response) => {
   const { avatarName } = req.body;
   try {
     const usersRef = collection(db, "users");
@@ -179,28 +201,31 @@ app.patch("/api/users/:userId/avatar", async (req, res) => {
   }
 });
 
-app.patch("/api/users/:userId/show-city", async (req, res) => {
-  const { showCity } = req.body;
-  try {
-    const usersRef = collection(db, "users");
-    const userQuery = await getDocs(
-      query(usersRef, where("clerk_user_id", "==", req.params.userId))
-    );
+app.patch(
+  "/api/users/:userId/show-city",
+  async (req: Request, res: Response) => {
+    const { showCity } = req.body;
+    try {
+      const usersRef = collection(db, "users");
+      const userQuery = await getDocs(
+        query(usersRef, where("clerk_user_id", "==", req.params.userId))
+      );
 
-    if (userQuery.empty) {
-      res.status(404).json({ error: "User not found" });
-    } else {
-      const userDoc = userQuery.docs[0];
-      await updateDoc(userDoc.ref, {
-        show_city: showCity,
-      });
-      res.json({ success: true });
+      if (userQuery.empty) {
+        res.status(404).json({ error: "User not found" });
+      } else {
+        const userDoc = userQuery.docs[0];
+        await updateDoc(userDoc.ref, {
+          show_city: showCity,
+        });
+        res.json({ success: true });
+      }
+    } catch (error) {
+      console.error("Error updating show city:", error);
+      res.status(500).json({ error: "Failed to update show city" });
     }
-  } catch (error) {
-    console.error("Error updating show city:", error);
-    res.status(500).json({ error: "Failed to update show city" });
   }
-});
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
