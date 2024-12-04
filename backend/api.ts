@@ -3,9 +3,11 @@ import { initializeApp } from "firebase/app";
 import {
   addDoc,
   collection,
+  DocumentData,
   getDocs,
   getFirestore,
   query,
+  QueryDocumentSnapshot,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -51,7 +53,7 @@ app.get("/api/users", async (req: Request, res: Response) => {
     const usersRef = collection(db, "users");
     const snapshot = await getDocs(usersRef);
     const users: User[] = [];
-    snapshot.forEach((doc) => {
+    snapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
       users.push({ id: doc.id, ...(doc.data() as Omit<User, "id">) });
     });
     res.json(users);
