@@ -178,6 +178,18 @@ function AuthNavigator({ setUserId }) {
                 }
               </Tab.Screen>
               <Tab.Screen
+                name="Contacts"
+                component={ContactListScreen}
+                options={{
+                  tabBarIcon: ({ focused, color, size }) => {
+                    const iconName = focused ? "people" : "people-outline";
+                    return (
+                      <Ionicons name={iconName} size={size} color={color} />
+                    );
+                  },
+                }}
+              />
+              <Tab.Screen
                 name="Profile"
                 options={{
                   tabBarIcon: ({ focused, color, size }) => {
@@ -201,18 +213,6 @@ function AuthNavigator({ setUserId }) {
                   />
                 )}
               </Tab.Screen>
-              <Tab.Screen
-                name="Contacts"
-                component={ContactListScreen}
-                options={{
-                  tabBarIcon: ({ focused, color, size }) => {
-                    const iconName = focused ? "people" : "people-outline";
-                    return (
-                      <Ionicons name={iconName} size={size} color={color} />
-                    );
-                  },
-                }}
-              />
             </Tab.Navigator>
           )}
         </Stack.Screen>

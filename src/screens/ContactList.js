@@ -106,6 +106,7 @@ function ContactListScreen() {
     <ScrollView style={styles.container}>
       {CONTACT_LIST.map((contact, index) => {
         const matchingUser = findMatchingUser(contact);
+        console.log(matchingUser);
         return (
           <View key={index} style={styles.contactItem}>
             <Text style={styles.contactName}>{contact}</Text>

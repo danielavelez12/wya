@@ -1,5 +1,5 @@
 import { useAuth, useSignUp } from "@clerk/clerk-expo";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   Image,
@@ -17,7 +17,7 @@ import { createUser } from "../../api";
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut, isSignedIn } = useAuth();
-  const router = useRouter();
+  const navigation = useNavigation();
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [pendingVerification, setPendingVerification] = useState(false);
@@ -29,6 +29,8 @@ export default function SignUpScreen() {
   const [clerkUserID, setClerkUserID] = useState("");
 
   const [sessionId, setSessionId] = useState(null);
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (isSignedIn) {
@@ -36,19 +38,24 @@ export default function SignUpScreen() {
   }, [isSignedIn]);
 
   const onSignUpPress = async () => {
-    if (!isLoaded) {
-      return;
-    }
+    if (!isLoaded) return;
 
     try {
+      setErrorMessage("");
       await signUp.create({
         phoneNumber,
+        password,
       });
 
       await signUp.preparePhoneNumberVerification({ strategy: "phone_code" });
       setPendingVerification(true);
     } catch (err) {
       console.error("Error during sign-up:", JSON.stringify(err, null, 2));
+      if (err.errors && err.errors.length > 0) {
+        setErrorMessage(err.errors[0].message);
+      } else {
+        setErrorMessage(err.message || "An error occurred during sign up");
+      }
     }
   };
 
@@ -99,7 +106,7 @@ export default function SignUpScreen() {
     await createUser(phoneNumber, firstName, lastName, email, clerkUserID);
     await setActive({ session: sessionId });
     setVerified(true);
-    router.replace("/");
+    navigation.replace("Main");
   };
 
   return (
@@ -127,14 +134,31 @@ export default function SignUpScreen() {
                 style={styles.input}
                 initialCountry="us"
                 value={phoneNumber}
-                onChangePhoneNumber={(displayValue, iso2) => {
-                  setPhoneNumber(displayValue);
-                }}
+                onChangePhoneNumber={(displayValue) =>
+                  setPhoneNumber(displayValue)
+                }
                 inputStyle={styles.input}
               />
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                secureTextEntry
+              />
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
               <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
                 <Text style={styles.buttonText}>Continue</Text>
               </TouchableOpacity>
+              <View style={styles.signInContainer}>
+                <Text style={styles.signInText}>Already have an account?</Text>
+                <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
+                  <Text style={styles.signInLink}>Sign in</Text>
+                </TouchableOpacity>
+              </View>
             </>
           )}
           {pendingVerification && !verified && (
@@ -160,6 +184,7 @@ export default function SignUpScreen() {
                 value={firstName}
                 onChangeText={setFirstName}
                 placeholder="Enter your name"
+                autoCapitalize="none"
               />
               <Text style={styles.label}>Last name</Text>
               <TextInput
@@ -167,6 +192,7 @@ export default function SignUpScreen() {
                 value={lastName}
                 onChangeText={setLastName}
                 placeholder="Enter your name"
+                autoCapitalize="none"
               />
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -175,6 +201,7 @@ export default function SignUpScreen() {
                 onChangeText={setEmail}
                 placeholder="Enter your email"
                 keyboardType="email-address"
+                autoCapitalize="none"
               />
               <TouchableOpacity
                 style={styles.button}
@@ -234,5 +261,22 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
+  },
+  errorText: {
+    marginBottom: 10,
+    color: "red",
+  },
+  signInContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  signInText: {
+    color: "#8B4513",
+    marginRight: 5,
+  },
+  signInLink: {
+    color: "#DEB887",
+    fontWeight: "bold",
   },
 });
