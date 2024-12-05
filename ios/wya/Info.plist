@@ -43,11 +43,11 @@
 		<true/>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to use your location.</string>
+	<string>We use your location to help you find other RabbitHolers near you on our map. Your location will be shared with other users only when you enable location sharing in the app settings.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your location</string>
+	<string>We use your location to help you find other RabbitHolers near you on our map, even when the app is in the background. Your location will be shared with other users only when you enable location sharing in the app settings.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to access your location</string>
+	<string>We use your location to help you find other RabbitHolers near you on our map. Your location will be shared with other users only when you enable location sharing in the app settings.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
