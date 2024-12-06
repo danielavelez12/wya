@@ -1,8 +1,10 @@
+import { createClerkClient } from "@clerk/backend";
 import { Request, Response } from "express";
 import { initializeApp } from "firebase/app";
 import {
   addDoc,
   collection,
+  deleteDoc,
   DocumentData,
   getDocs,
   getFirestore,
@@ -11,6 +13,8 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
+
+require("dotenv").config();
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -25,9 +29,12 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+});
+
 const cors = require("cors");
 const express = require("express");
-require("dotenv").config();
 
 const app = express();
 app.use(cors());
@@ -65,7 +72,6 @@ app.get("/api/users", async (req: Request, res: Response) => {
 
 app.post("/api/users/location", async (req: Request, res: Response) => {
   const { userID, lat, lon } = req.body;
-  console.log(userID, lat, lon);
   try {
     const usersRef = collection(db, "users");
     const userQuery = await getDocs(
@@ -135,7 +141,6 @@ app.get(
 );
 
 app.get("/api/users/:userId", async (req: Request, res: Response) => {
-  console.log("calling by user id, ", req.params.userId);
   try {
     const usersRef = collection(db, "users");
     const userQuery = await getDocs(
@@ -290,6 +295,31 @@ Consent
 By using RabbitHolers, you consent to our collection and use of your information as described in this Privacy Policy.`;
 
   res.send(privacyPolicy);
+});
+
+app.delete("/api/users/:userId", async (req: Request, res: Response) => {
+  try {
+    // Delete from Clerk and get response
+    const clerkResponse = await clerkClient.users.deleteUser(req.params.userId);
+    console.log("Clerk deletion response:", clerkResponse);
+
+    // Proceed with Firestore deletion only if Clerk deletion was successful
+    const usersRef = collection(db, "users");
+    const userQuery = await getDocs(
+      query(usersRef, where("clerk_user_id", "==", req.params.userId))
+    );
+
+    if (userQuery.empty) {
+      res.status(404).json({ error: "User not found" });
+    } else {
+      const userDoc = userQuery.docs[0];
+      await deleteDoc(userDoc.ref);
+      res.json({ success: true });
+    }
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
