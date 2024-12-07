@@ -139,9 +139,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* rabbitholers! */ = {
+		13B07F861A680F5B00A75B9A /* wya */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "rabbitholers!" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "wya" */;
 			buildPhases = (
 				F813CED613F69A9BC6EE21C5 /* [CP] Check Pods Manifest.lock */,
 				73D4E2559FC5710DEF838BDB /* [Expo] Configure project */,
@@ -157,7 +157,7 @@
 			);
 			dependencies = (
 			);
-			name = "rabbitholers!";
+			name = wya;
 			productName = wya;
 			productReference = 13B07F961A680F5B00A75B9A /* wya.app */;
 			productType = "com.apple.product-type.application";
@@ -188,7 +188,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* rabbitholers! */,
+				13B07F861A680F5B00A75B9A /* wya */,
 			);
 		};
 /* End PBXProject section */
@@ -502,7 +502,10 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -560,7 +563,10 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -571,7 +577,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "rabbitholers!" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "wya" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,

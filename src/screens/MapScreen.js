@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
+import { callBlockUser } from "../api";
 import BottomCarousel from "../components/BottomCarousel";
 import PersonModal from "../components/PersonModal";
 import { useUsers } from "../context/UserContext";
@@ -90,10 +91,13 @@ const MapScreen = ({ location, avatar, userId }) => {
   };
 
   const handleBlockUser = async (userToBlock) => {
-    const success = await blockUser(userId, userToBlock.clerk_user_id);
+    console.log("user to block: ", userToBlock);
+    const success = await callBlockUser(userId, userToBlock.clerk_user_id);
     if (success) {
       setSelectedUser(null);
-      blockUser(userId, userToBlock.clerk_user_id)
+      blockUser(userId, userToBlock.clerk_user_id);
+      onRegionChangeComplete();
+    }
   };
 
   const mapStyle = [
@@ -181,16 +185,6 @@ const MapScreen = ({ location, avatar, userId }) => {
     );
   }
 
-  const currentUser = users.find((u) => u.clerk_user_id === userId);
-  console.log("Current user's blocked list:", currentUser?.blocked);
-  console.log(
-    "User's blockedBy list:",
-    users.map((user) => ({
-      name: user.first_name,
-      blockedBy: user.blockedBy,
-    }))
-  );
-
   return (
     <View style={styles.container}>
       <MapView
@@ -253,7 +247,7 @@ const MapScreen = ({ location, avatar, userId }) => {
               : selectedUser?.avatar,
         }}
         showBlockOption={selectedUser?.clerk_user_id !== userId}
-        onBlock={() => handleBlockUser(selectedUser)}
+        onBlock={async () => await handleBlockUser(selectedUser)}
       />
       <BottomCarousel
         people={visibleUsers

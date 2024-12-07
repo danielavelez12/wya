@@ -368,6 +368,7 @@ app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
 
     await batch.commit();
     res.json({ success: true });
+    
   } catch (error) {
     console.error("Error blocking user:", error);
     res.status(500).json({ error: "Failed to block user" });

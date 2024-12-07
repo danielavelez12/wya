@@ -81,6 +81,7 @@ export async function updateShowLocation(userID, showLocation) {
       },
       body: JSON.stringify({ showLocation }),
     });
+    console.log(response);
     if (!response.ok) throw new Error("Network response was not ok");
     return true;
   } catch (e) {
@@ -178,7 +179,7 @@ export async function deleteUser(userID) {
   }
 }
 
-export async function blockUser(blockerID, blockedID) {
+export async function callBlockUser(blockerID, blockedID) {
   try {
     const response = await fetch(`${API_URL}/users/${blockedID}/block`, {
       method: "PATCH",

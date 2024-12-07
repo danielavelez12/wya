@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   Linking,
@@ -25,6 +25,14 @@ export default function PersonModal({
   showBlockOption,
   onBlock,
 }) {
+  const [blockText, setBlockText] = useState(
+    "Block user from seeing my location"
+  );
+
+  useEffect(() => {
+    setBlockText("Block user from seeing my location");
+  }, [isVisible]);
+
   const handleEmailPress = () => {
     Linking.openURL(`mailto:${person.email}`);
   };
@@ -39,6 +47,11 @@ export default function PersonModal({
       return `${names[0]} ${names[names.length - 1][0]}.`;
     }
     return fullName;
+  };
+
+  const handleBlock = async () => {
+    setBlockText("User has been blocked from seeing your location.");
+    await onBlock();
   };
 
   return (
@@ -86,9 +99,16 @@ export default function PersonModal({
             </Text>
           </TouchableOpacity>
           {showBlockOption && (
-            <TouchableOpacity onPress={onBlock}>
-              <Text style={styles.blockText}>
-                Block user from seeing my location
+            <TouchableOpacity onPress={handleBlock}>
+              <Text
+                style={[
+                  styles.blockText,
+                  blockText.startsWith("User has been")
+                    ? { color: "#808080" }
+                    : { color: "#CD5C5C", textDecorationLine: "underline" },
+                ]}
+              >
+                {blockText}
               </Text>
             </TouchableOpacity>
           )}
@@ -177,8 +197,6 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   blockText: {
-    textDecorationLine: "underline",
-    color: "#CD5C5C",
     textAlign: "center",
     marginTop: 15,
   },
