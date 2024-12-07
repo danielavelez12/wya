@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
+import { blockUser } from "../api";
 import BottomCarousel from "../components/BottomCarousel";
 import PersonModal from "../components/PersonModal";
 import { useUsers } from "../context/UserContext";
@@ -87,6 +88,13 @@ const MapScreen = ({ location, avatar, userId }) => {
       (user) => user.first_name + " " + user.last_name === person.name
     );
     setSelectedUser(selectedUser);
+  };
+
+  const handleBlockUser = async (userToBlock) => {
+    const success = await blockUser(userId, userToBlock.clerk_user_id);
+    if (success) {
+      setSelectedUser(null);
+    }
   };
 
   const mapStyle = [
@@ -191,7 +199,8 @@ const MapScreen = ({ location, avatar, userId }) => {
         onRegionChangeComplete={onRegionChangeComplete}
       >
         {users.map((user) => {
-          if (!user.show_location) return null; // Skip users who don't want to show their location
+          if (!user.show_location) return null;
+          if (user.blockedBy?.includes(userId)) return null;
           const lat = parseFloat(user.latitude);
           const lng = parseFloat(user.longitude);
           if (isNaN(lat) || isNaN(lng)) return null; // Skip invalid coordinates
@@ -231,6 +240,8 @@ const MapScreen = ({ location, avatar, userId }) => {
               ? avatar
               : selectedUser?.avatar,
         }}
+        showBlockOption={selectedUser?.clerk_user_id !== userId}
+        onBlock={() => handleBlockUser(selectedUser)}
       />
       <BottomCarousel
         people={visibleUsers.map((user) => ({

@@ -6,7 +6,6 @@ import { createStackNavigator } from "@react-navigation/stack";
 import * as Location from "expo-location";
 import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
-import * as TaskManager from "expo-task-manager";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -252,39 +251,6 @@ export default function App() {
       }
     },
   };
-
-  TaskManager.defineTask(
-    "fetch_location",
-    async ({ data: { locations }, error }) => {
-      if (!userId) return;
-      if (error) {
-        console.error("fetch_location:  error: ", error);
-        return;
-      }
-      const { latitude, longitude } = locations[0].coords;
-      try {
-        await updateLastLocation(userId, latitude, longitude);
-      } catch (e) {
-        console.error("fetch_location:  error: ", e);
-      }
-    }
-  );
-
-  Location.startLocationUpdatesAsync("fetch_location", {
-    accuracy: Location.Accuracy.Highest,
-    distanceInterval: 1,
-    deferredUpdatesInterval: 1000,
-    foregroundService: {
-      notificationTitle: "wya",
-      notificationBody: "wya is using your location",
-    },
-  });
-
-  Location.hasStartedLocationUpdatesAsync("fetch_location").then((res) => {
-    if (res) {
-      Location.stopLocationUpdatesAsync("fetch_location");
-    }
-  });
 
   return (
     <SafeAreaProvider>

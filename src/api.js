@@ -13,7 +13,6 @@ export async function fetchUsers() {
 
 export async function updateLastLocation(userID, lat, lon) {
   try {
-    console.log({ userID, lat, lon });
     const response = await fetch(`${API_URL}/users/location`, {
       method: "POST",
       headers: {
@@ -61,6 +60,7 @@ export async function createUser(
         lastName,
         email,
         clerkUserID,
+        blockedBy: [],
       }),
     });
     if (!response.ok) throw new Error("Network response was not ok");
@@ -159,5 +159,38 @@ export async function loginWithCredentials(username, password) {
   } catch (e) {
     console.error("loginWithCredentials: error logging in:", e);
     return null;
+  }
+}
+
+export async function deleteUser(userID) {
+  try {
+    const response = await fetch(`${API_URL}/users/${userID}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return true;
+  } catch (e) {
+    console.error("deleteUser: error deleting user:", e);
+    return false;
+  }
+}
+
+export async function blockUser(blockerID, blockedID) {
+  try {
+    const response = await fetch(`${API_URL}/users/${blockedID}/block`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ blockerID }),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return true;
+  } catch (e) {
+    console.error("blockUser: error blocking user:", e);
+    return false;
   }
 }

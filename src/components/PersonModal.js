@@ -18,7 +18,13 @@ const avatars = {
   porky: require("../../assets/avatars/porky.png"),
 };
 
-export default function PersonModal({ isVisible, onClose, person }) {
+export default function PersonModal({
+  isVisible,
+  onClose,
+  person,
+  showBlockOption,
+  onBlock,
+}) {
   const handleEmailPress = () => {
     Linking.openURL(`mailto:${person.email}`);
   };
@@ -26,8 +32,6 @@ export default function PersonModal({ isVisible, onClose, person }) {
   const handleTextPress = () => {
     Linking.openURL(`sms:${person.phoneNumber}`);
   };
-
- 
 
   const formatName = (fullName) => {
     const names = fullName.split(" ");
@@ -81,6 +85,13 @@ export default function PersonModal({ isVisible, onClose, person }) {
               {person.phoneNumber}
             </Text>
           </TouchableOpacity>
+          {showBlockOption && (
+            <TouchableOpacity onPress={onBlock}>
+              <Text style={styles.blockText}>
+                Block user from seeing my location
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     </Modal>
@@ -164,5 +175,11 @@ const styles = StyleSheet.create({
   },
   underlined: {
     textDecorationLine: "underline",
+  },
+  blockText: {
+    textDecorationLine: "underline",
+    color: "#CD5C5C",
+    textAlign: "center",
+    marginTop: 15,
   },
 });

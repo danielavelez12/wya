@@ -106,7 +106,7 @@ export default function SignUpScreen() {
     await createUser(phoneNumber, firstName, lastName, email, clerkUserID);
     await setActive({ session: sessionId });
     setVerified(true);
-    navigation.replace("Main");
+    navigation.replace("Map");
   };
 
   return (

@@ -1,6 +1,7 @@
 import { useAuth } from "@clerk/clerk-expo";
 import React from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { deleteUser } from "../api";
 import { useUsers } from "../context/UserContext";
 
 const avatars = [
@@ -55,6 +57,35 @@ const ProfileScreen = ({
     updateUserPreference(userId, "avatar", avatarName);
   };
 
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      "Delete account",
+      "Are you sure you want to delete your account? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteUser(userId);
+              await signOut();
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete account. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -95,6 +126,12 @@ const ProfileScreen = ({
         </View>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteAccountButton}
+          onPress={handleDeleteAccount}
+        >
+          <Text style={styles.deleteAccountButtonText}>Delete account</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -158,6 +195,18 @@ const styles = StyleSheet.create({
   avatar: {
     width: 30,
     height: 50,
+  },
+  deleteAccountButton: {
+    backgroundColor: "#8B0000",
+    borderRadius: 8,
+    padding: 15,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  deleteAccountButtonText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
 
