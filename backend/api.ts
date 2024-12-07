@@ -54,7 +54,7 @@ interface User {
   show_location?: boolean;
   show_city?: boolean;
   avatar?: string;
-  blockedBy?: string[];
+  blocked_by?: string[];
   blocked?: string[];
 }
 
@@ -109,7 +109,7 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
       last_name: lastName,
       email,
       clerk_user_id: clerkUserID,
-      blockedBy: [],
+      blocked_by: [],
       blocked: [],
     });
     res.json({ id: newUser.id });
@@ -332,12 +332,10 @@ app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
   try {
     const usersRef = collection(db, "users");
 
-    // Update blocked user's blockedBy array
     const blockedUserQuery = await getDocs(
       query(usersRef, where("clerk_user_id", "==", req.params.userId))
     );
 
-    // Update blocker's blocked array
     const blockerQuery = await getDocs(
       query(usersRef, where("clerk_user_id", "==", blockerID))
     );
