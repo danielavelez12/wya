@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-import { fetchUsers, fetchUserById } from "../api"; // Import your API function
+import { fetchUserById, fetchUsers } from "../api"; // Import your API function
 
 const UserContext = createContext();
 
@@ -52,6 +52,35 @@ export function UserProvider({ children }) {
     return users.find((user) => user.clerk_user_id === userId);
   };
 
+  const blockUser = (blockerId, blockedId) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) => {
+        if (user.clerk_user_id === blockerId) {
+          // Add blockedId to blocker's blocked list
+          const blocked = user.blocked || [];
+          return { ...user, blocked: [...new Set([...blocked, blockedId])] };
+        }
+        if (user.clerk_user_id === blockedId) {
+          // Add blockerId to blocked user's blockedBy list
+          const blockedBy = user.blockedBy || [];
+          return {
+            ...user,
+            blockedBy: [...new Set([...blockedBy, blockerId])],
+          };
+        }
+        return user;
+      })
+    );
+
+    // Update currentUser if they're the blocker
+    if (currentUser?.clerk_user_id === blockerId) {
+      setCurrentUser((prev) => ({
+        ...prev,
+        blocked: [...new Set([...(prev.blocked || []), blockedId])],
+      }));
+    }
+  };
+
   return (
     <UserContext.Provider
       value={{
@@ -63,6 +92,7 @@ export function UserProvider({ children }) {
         getUserById,
         isLoading,
         initializeCurrentUser,
+        blockUser,
       }}
     >
       {children}

@@ -12,6 +12,7 @@ import {
   QueryDocumentSnapshot,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 
 require("dotenv").config();
@@ -54,6 +55,7 @@ interface User {
   show_city?: boolean;
   avatar?: string;
   blockedBy?: string[];
+  blocked?: string[];
 }
 
 app.get("/api/users", async (req: Request, res: Response) => {
@@ -108,6 +110,7 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
       email,
       clerk_user_id: clerkUserID,
       blockedBy: [],
+      blocked: [],
     });
     res.json({ id: newUser.id });
   } catch (error) {
@@ -328,25 +331,45 @@ app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
   const { blockerID } = req.body;
   try {
     const usersRef = collection(db, "users");
-    const userQuery = await getDocs(
+
+    // Update blocked user's blockedBy array
+    const blockedUserQuery = await getDocs(
       query(usersRef, where("clerk_user_id", "==", req.params.userId))
     );
 
-    if (userQuery.empty) {
+    // Update blocker's blocked array
+    const blockerQuery = await getDocs(
+      query(usersRef, where("clerk_user_id", "==", blockerID))
+    );
+
+    if (blockedUserQuery.empty || blockerQuery.empty) {
       res.status(404).json({ error: "User not found" });
-    } else {
-      const userDoc = userQuery.docs[0];
-      const userData = userDoc.data();
-      const blockedBy = userData.blockedBy || [];
-
-      if (!blockedBy.includes(blockerID)) {
-        await updateDoc(userDoc.ref, {
-          blockedBy: [...blockedBy, blockerID],
-        });
-      }
-
-      res.json({ success: true });
+      return;
     }
+
+    const blockedUserDoc = blockedUserQuery.docs[0];
+    const blockerDoc = blockerQuery.docs[0];
+
+    const batch = writeBatch(db);
+
+    // Update blocked user's blockedBy array
+    const blockedByArray = blockedUserDoc.data().blockedBy || [];
+    if (!blockedByArray.includes(blockerID)) {
+      batch.update(blockedUserDoc.ref, {
+        blockedBy: [...blockedByArray, blockerID],
+      });
+    }
+
+    // Update blocker's blocked array
+    const blockedArray = blockerDoc.data().blocked || [];
+    if (!blockedArray.includes(req.params.userId)) {
+      batch.update(blockerDoc.ref, {
+        blocked: [...blockedArray, req.params.userId],
+      });
+    }
+
+    await batch.commit();
+    res.json({ success: true });
   } catch (error) {
     console.error("Error blocking user:", error);
     res.status(500).json({ error: "Failed to block user" });

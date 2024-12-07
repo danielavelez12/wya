@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-import { blockUser } from "../api";
 import BottomCarousel from "../components/BottomCarousel";
 import PersonModal from "../components/PersonModal";
 import { useUsers } from "../context/UserContext";
@@ -34,7 +33,7 @@ const CustomMarker = ({ firstName, avatar }) => (
 );
 
 const MapScreen = ({ location, avatar, userId }) => {
-  const { users, isLoading } = useUsers();
+  const { users, isLoading, blockUser } = useUsers();
   const [visibleUsers, setVisibleUsers] = useState([]);
   const [isZoomedIn, setIsZoomedIn] = useState(false);
   const mapRef = useRef(null);
@@ -94,7 +93,7 @@ const MapScreen = ({ location, avatar, userId }) => {
     const success = await blockUser(userId, userToBlock.clerk_user_id);
     if (success) {
       setSelectedUser(null);
-    }
+      blockUser(userId, userToBlock.clerk_user_id)
   };
 
   const mapStyle = [
@@ -182,6 +181,16 @@ const MapScreen = ({ location, avatar, userId }) => {
     );
   }
 
+  const currentUser = users.find((u) => u.clerk_user_id === userId);
+  console.log("Current user's blocked list:", currentUser?.blocked);
+  console.log(
+    "User's blockedBy list:",
+    users.map((user) => ({
+      name: user.first_name,
+      blockedBy: user.blockedBy,
+    }))
+  );
+
   return (
     <View style={styles.container}>
       <MapView
@@ -201,9 +210,12 @@ const MapScreen = ({ location, avatar, userId }) => {
         {users.map((user) => {
           if (!user.show_location) return null;
           if (user.blockedBy?.includes(userId)) return null;
+          const currentUser = users.find((u) => u.clerk_user_id === userId);
+          if (currentUser?.blocked?.includes(user.clerk_user_id)) return null;
+
           const lat = parseFloat(user.latitude);
           const lng = parseFloat(user.longitude);
-          if (isNaN(lat) || isNaN(lng)) return null; // Skip invalid coordinates
+          if (isNaN(lat) || isNaN(lng)) return null;
 
           return (
             <Marker
@@ -244,12 +256,20 @@ const MapScreen = ({ location, avatar, userId }) => {
         onBlock={() => handleBlockUser(selectedUser)}
       />
       <BottomCarousel
-        people={visibleUsers.map((user) => ({
-          id: user.id,
-          name: `${user.first_name} ${user.last_name}`,
-          avatar: user.clerk_user_id === userId ? avatar : user.avatar,
-          show_location: user.show_location,
-        }))}
+        people={visibleUsers
+          .filter((user) => {
+            const currentUser = users.find((u) => u.clerk_user_id === userId);
+            return (
+              !user.blockedBy?.includes(userId) &&
+              !currentUser?.blocked?.includes(user.clerk_user_id)
+            );
+          })
+          .map((user) => ({
+            id: user.id,
+            name: `${user.first_name} ${user.last_name}`,
+            avatar: user.clerk_user_id === userId ? avatar : user.avatar,
+            show_location: user.show_location,
+          }))}
         onPersonSelect={handlePersonSelect}
         currentUserId={userId}
       />
