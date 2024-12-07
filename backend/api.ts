@@ -253,11 +253,11 @@ We collect the following types of information to provide and improve our service
 1. Contact Information
    - Name
    - Phone Number
-   These are used for app functionality and are linked to your user identity.
+   These are used for app functionality only and are linked to your user identity. These are not shared with any third parties.
 
 2. Location Data
    - Precise Location
-   This is used for app functionality and is linked to your user identity.
+   This is used for app functionality only and is linked to your user identity. This is not shared with any third parties.
 
 How We Use Your Information
 We use the collected information for:
@@ -368,7 +368,6 @@ app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
 
     await batch.commit();
     res.json({ success: true });
-    
   } catch (error) {
     console.error("Error blocking user:", error);
     res.status(500).json({ error: "Failed to block user" });
