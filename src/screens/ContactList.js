@@ -57,7 +57,7 @@ async function getCityFromCoordinates(latitude, longitude) {
   }
 }
 
-function ContactListScreen() {
+function ContactListScreen({ userId }) {
   const { users } = useUsers();
   const [loading, setLoading] = useState(true);
   const [userCities, setUserCities] = useState({});
@@ -92,6 +92,19 @@ function ContactListScreen() {
     );
   };
 
+  const isUserBlocked = (matchingUser) => {
+    if (!matchingUser) return false;
+
+    // Find current user
+    const currentUser = users.find((u) => u.clerk_user_id === userId);
+
+    // Check if the user is blocked by current user or has blocked current user
+    return (
+      matchingUser.blockedBy?.includes(userId) ||
+      currentUser?.blocked?.includes(matchingUser.clerk_user_id)
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -104,6 +117,10 @@ function ContactListScreen() {
     <ScrollView style={styles.container}>
       {CONTACT_LIST.map((contact, index) => {
         const matchingUser = findMatchingUser(contact);
+
+        // Skip rendering if user is blocked
+        if (isUserBlocked(matchingUser)) return null;
+
         return (
           <View key={index} style={styles.contactItem}>
             <Text style={styles.contactName}>{contact}</Text>

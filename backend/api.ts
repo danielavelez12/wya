@@ -374,6 +374,24 @@ app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
   }
 });
 
+app.post("/api/reports", async (req: Request, res: Response) => {
+  const { reporterID, reportedID, explanation, timestamp } = req.body;
+  try {
+    const reportsRef = collection(db, "reports");
+    const newReport = await addDoc(reportsRef, {
+      reporter_id: reporterID,
+      reported_id: reportedID,
+      explanation,
+      timestamp,
+      status: "pending",
+    });
+    res.json({ id: newReport.id });
+  } catch (error) {
+    console.error("Error creating report:", error);
+    res.status(500).json({ error: "Failed to create report" });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

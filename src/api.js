@@ -195,3 +195,25 @@ export async function callBlockUser(blockerID, blockedID) {
     return false;
   }
 }
+
+export async function reportContent(reporterID, reportedID, explanation) {
+  try {
+    const response = await fetch(`${API_URL}/reports`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        reporterID,
+        reportedID,
+        explanation,
+        timestamp: new Date().toISOString(),
+      }),
+    });
+    if (!response.ok) throw new Error("Network response was not ok");
+    return true;
+  } catch (e) {
+    console.error("reportContent: error reporting content:", e);
+    return false;
+  }
+}

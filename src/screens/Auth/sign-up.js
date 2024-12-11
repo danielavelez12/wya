@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   Image,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -31,6 +32,7 @@ export default function SignUpScreen() {
   const [sessionId, setSessionId] = useState(null);
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -109,6 +111,10 @@ export default function SignUpScreen() {
     navigation.replace("Map");
   };
 
+  const isFormValid = () => {
+    return phoneNumber && password && termsAccepted;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.logoContainer}>
@@ -147,10 +153,27 @@ export default function SignUpScreen() {
                 placeholder="Enter your password"
                 secureTextEntry
               />
+              <View style={styles.termsContainer}>
+                <Pressable
+                  style={styles.checkbox}
+                  onPress={() => setTermsAccepted(!termsAccepted)}
+                >
+                  {termsAccepted && <View style={styles.checkboxChecked} />}
+                </Pressable>
+                <Text style={styles.termsText}>
+                  I agree to the Terms of Service and acknowledge that any
+                  objectionable content or abusive behavior will result in
+                  immediate account termination
+                </Text>
+              </View>
               {errorMessage ? (
                 <Text style={styles.errorText}>{errorMessage}</Text>
               ) : null}
-              <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
+              <TouchableOpacity
+                style={[styles.button, !isFormValid() && styles.buttonDisabled]}
+                onPress={onSignUpPress}
+                disabled={!isFormValid()}
+              >
                 <Text style={styles.buttonText}>Continue</Text>
               </TouchableOpacity>
               <View style={styles.signInContainer}>
@@ -278,5 +301,36 @@ const styles = StyleSheet.create({
   signInLink: {
     color: "#DEB887",
     fontWeight: "bold",
+  },
+  termsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: "#8B4513",
+    marginRight: 10,
+    borderRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxChecked: {
+    width: 12,
+    height: 12,
+    backgroundColor: "#8B4513",
+    borderRadius: 2,
+  },
+  termsText: {
+    flex: 1,
+    color: "#8B4513",
+    fontSize: 14,
+  },
+  buttonDisabled: {
+    backgroundColor: "#DEB887",
+    opacity: 0.3,
   },
 });

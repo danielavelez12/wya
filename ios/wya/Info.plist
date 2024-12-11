@@ -43,7 +43,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location to help you find other Rabbitholers near you on our map. Your location will be updated and shared with other users only when you use the Rabbitholers app and have location sharing enabled on the app settings.</string>
+	<string>We use your location to help you find other Rabbitholers near you on our map. Your location will be updated and shared with other users only when you manually check in on the Rabbitholers app.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

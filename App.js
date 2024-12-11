@@ -178,7 +178,6 @@ function AuthNavigator({ setUserId }) {
               </Tab.Screen>
               <Tab.Screen
                 name="Contacts"
-                component={ContactListScreen}
                 options={{
                   tabBarIcon: ({ focused, color, size }) => {
                     const iconName = focused ? "people" : "people-outline";
@@ -187,7 +186,9 @@ function AuthNavigator({ setUserId }) {
                     );
                   },
                 }}
-              />
+              >
+                {() => <ContactListScreen userId={userId} />}
+              </Tab.Screen>
               <Tab.Screen
                 name="Profile"
                 options={{

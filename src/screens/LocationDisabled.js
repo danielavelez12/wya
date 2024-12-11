@@ -4,8 +4,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 const LocationDisabledScreen = ({ onEnableLocation }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.message}>
-        Please enable showing your location to see the map :)
+      <Text style={styles.message}>Check in to the rabbitholers map!</Text>
+      <Text style={styles.submessage}>
+        This will only show your current location while you're on the
+        rabbitholers app and will not update your location in the background.
       </Text>
       <TouchableOpacity
         style={styles.button}
@@ -15,7 +17,7 @@ const LocationDisabledScreen = ({ onEnableLocation }) => {
         }}
         accessibilityLabel="Enable location"
       >
-        <Text style={styles.buttonText}>Show my location</Text>
+        <Text style={styles.buttonText}>Check in</Text>
       </TouchableOpacity>
     </View>
   );
@@ -35,6 +37,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     marginBottom: 30,
+  },
+  submessage: {
+    fontSize: 14,
+    color: "#8B4513",
+    textAlign: "center",
+    marginBottom: 30,
+    paddingHorizontal: 20,
   },
   button: {
     backgroundColor: "#DEB887",

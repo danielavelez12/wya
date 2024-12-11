@@ -25,12 +25,10 @@ export default function PersonModal({
   showBlockOption,
   onBlock,
 }) {
-  const [blockText, setBlockText] = useState(
-    "Block user from seeing my location"
-  );
+  const [blockText, setBlockText] = useState("Block user");
 
   useEffect(() => {
-    setBlockText("Block user from seeing my location");
+    setBlockText("Block user");
   }, [isVisible]);
 
   const handleEmailPress = () => {
@@ -50,7 +48,7 @@ export default function PersonModal({
   };
 
   const handleBlock = async () => {
-    setBlockText("User has been blocked from seeing your location.");
+    setBlockText("User has been blocked.");
     await onBlock();
   };
 
