@@ -14,6 +14,7 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
+import winston from "winston";
 
 require("dotenv").config();
 
@@ -58,6 +59,19 @@ interface User {
   blocked?: string[];
 }
 
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: "error.log", level: "error" }),
+    new winston.transports.File({ filename: "combined.log" }),
+  ],
+});
+
 app.get("/api/users", async (req: Request, res: Response) => {
   try {
     const usersRef = collection(db, "users");
@@ -75,6 +89,7 @@ app.get("/api/users", async (req: Request, res: Response) => {
 
 app.post("/api/users/location", async (req: Request, res: Response) => {
   const { userID, lat, lon } = req.body;
+  logger.info("Location update attempt", { userID, lat, lon });
   try {
     const usersRef = collection(db, "users");
     const userQuery = await getDocs(
@@ -82,6 +97,7 @@ app.post("/api/users/location", async (req: Request, res: Response) => {
     );
 
     if (userQuery.empty) {
+      logger.warn("Location update failed - user not found", { userID });
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -92,15 +108,25 @@ app.post("/api/users/location", async (req: Request, res: Response) => {
       last_updated: new Date().toISOString(),
     });
 
+    logger.info("Location successfully updated", { userID, lat, lon });
     res.json({ success: true });
   } catch (error) {
-    console.error("Error updating location:", error);
+    logger.error("Error updating location", {
+      userID,
+      error: error.message,
+    });
     res.status(500).json({ error: "Failed to update location" });
   }
 });
 
 app.post("/api/users/signup", async (req: Request, res: Response) => {
   const { phoneNumber, firstName, lastName, email, clerkUserID } = req.body;
+  logger.info("User signup attempt", {
+    clerkUserID,
+    email,
+    firstName,
+    lastName,
+  });
   try {
     const usersRef = collection(db, "users");
     const newUser = await addDoc(usersRef, {
@@ -112,8 +138,16 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
       blocked_by: [],
       blocked: [],
     });
+    logger.info("User successfully created", {
+      userId: newUser.id,
+      clerkUserID,
+    });
     res.json({ id: newUser.id });
   } catch (error) {
+    logger.error("Error creating user", {
+      clerkUserID,
+      error: error.message,
+    });
     console.error("Error creating user:", error);
     res.status(500).json({ error: "Failed to create user" });
   }
@@ -122,6 +156,9 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
 app.get(
   "/api/users/phone/:phoneNumber",
   async (req: Request, res: Response) => {
+    logger.info("Phone number lookup attempt", {
+      phoneNumber: req.params.phoneNumber,
+    });
     try {
       const usersRef = collection(db, "users");
       const userQuery = await getDocs(
@@ -129,8 +166,14 @@ app.get(
       );
 
       if (userQuery.empty) {
+        logger.info("Phone number not found", {
+          phoneNumber: req.params.phoneNumber,
+        });
         res.json({ exists: false });
       } else {
+        logger.info("Phone number found", {
+          phoneNumber: req.params.phoneNumber,
+        });
         const userDoc = userQuery.docs[0];
         res.json({
           exists: true,
@@ -139,13 +182,17 @@ app.get(
         });
       }
     } catch (error) {
-      console.error("Error checking phone number:", error);
+      logger.error("Error checking phone number", {
+        phoneNumber: req.params.phoneNumber,
+        error: error.message,
+      });
       res.status(500).json({ error: "Failed to check phone number" });
     }
   }
 );
 
 app.get("/api/users/:userId", async (req: Request, res: Response) => {
+  logger.info("User fetch attempt", { userId: req.params.userId });
   try {
     const usersRef = collection(db, "users");
     const userQuery = await getDocs(
@@ -153,12 +200,18 @@ app.get("/api/users/:userId", async (req: Request, res: Response) => {
     );
 
     if (userQuery.empty) {
+      logger.warn("User not found", { userId: req.params.userId });
       res.status(404).json({ error: "User not found" });
     } else {
       const userDoc = userQuery.docs[0];
+      logger.info("User successfully fetched", { userId: req.params.userId });
       res.json({ id: userDoc.id, ...userDoc.data() });
     }
   } catch (error) {
+    logger.error("Error fetching user", {
+      userId: req.params.userId,
+      error: error.message,
+    });
     console.error("Error fetching user:", error);
     res.status(500).json({ error: "Failed to fetch user" });
   }
@@ -168,6 +221,10 @@ app.patch(
   "/api/users/:userId/show-location",
   async (req: Request, res: Response) => {
     const { showLocation } = req.body;
+    logger.info("Show location update attempt", {
+      userId: req.params.userId,
+      showLocation,
+    });
     try {
       const usersRef = collection(db, "users");
       const userQuery = await getDocs(
@@ -175,16 +232,26 @@ app.patch(
       );
 
       if (userQuery.empty) {
+        logger.warn("Show location update failed - user not found", {
+          userId: req.params.userId,
+        });
         res.status(404).json({ error: "User not found" });
       } else {
         const userDoc = userQuery.docs[0];
         await updateDoc(userDoc.ref, {
           show_location: showLocation,
         });
+        logger.info("Show location successfully updated", {
+          userId: req.params.userId,
+          showLocation,
+        });
         res.json({ success: true });
       }
     } catch (error) {
-      console.error("Error updating show location:", error);
+      logger.error("Error updating show location", {
+        userId: req.params.userId,
+        error: error.message,
+      });
       res.status(500).json({ error: "Failed to update show location" });
     }
   }
@@ -192,6 +259,10 @@ app.patch(
 
 app.patch("/api/users/:userId/avatar", async (req: Request, res: Response) => {
   const { avatarName } = req.body;
+  logger.info("Avatar update attempt", {
+    userId: req.params.userId,
+    avatarName,
+  });
   try {
     const usersRef = collection(db, "users");
     const userQuery = await getDocs(
@@ -199,16 +270,26 @@ app.patch("/api/users/:userId/avatar", async (req: Request, res: Response) => {
     );
 
     if (userQuery.empty) {
+      logger.warn("Avatar update failed - user not found", {
+        userId: req.params.userId,
+      });
       res.status(404).json({ error: "User not found" });
     } else {
       const userDoc = userQuery.docs[0];
       await updateDoc(userDoc.ref, {
         avatar: avatarName,
       });
+      logger.info("Avatar successfully updated", {
+        userId: req.params.userId,
+        avatarName,
+      });
       res.json({ success: true });
     }
   } catch (error) {
-    console.error("Error updating avatar:", error);
+    logger.error("Error updating avatar", {
+      userId: req.params.userId,
+      error: error.message,
+    });
     res.status(500).json({ error: "Failed to update avatar" });
   }
 });
@@ -303,63 +384,78 @@ By using RabbitHolers, you consent to our collection and use of your information
 });
 
 app.delete("/api/users/:userId", async (req: Request, res: Response) => {
+  logger.info("User deletion attempt", { userId: req.params.userId });
   try {
-    // Delete from Clerk and get response
     const clerkResponse = await clerkClient.users.deleteUser(req.params.userId);
-    console.log("Clerk deletion response:", clerkResponse);
+    logger.info("Clerk user deletion successful", {
+      userId: req.params.userId,
+      clerkResponse,
+    });
 
-    // Proceed with Firestore deletion only if Clerk deletion was successful
     const usersRef = collection(db, "users");
     const userQuery = await getDocs(
       query(usersRef, where("clerk_user_id", "==", req.params.userId))
     );
 
     if (userQuery.empty) {
+      logger.warn("Firestore user not found for deletion", {
+        userId: req.params.userId,
+      });
       res.status(404).json({ error: "User not found" });
     } else {
       const userDoc = userQuery.docs[0];
       await deleteDoc(userDoc.ref);
+      logger.info("User successfully deleted from Firestore", {
+        userId: req.params.userId,
+      });
       res.json({ success: true });
     }
   } catch (error) {
-    console.error("Error deleting user:", error);
+    logger.error("Error deleting user", {
+      userId: req.params.userId,
+      error: error.message,
+    });
     res.status(500).json({ error: "Failed to delete user" });
   }
 });
 
 app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
   const { blockerID } = req.body;
+  logger.info("Block user attempt", {
+    blockedUserId: req.params.userId,
+    blockerID,
+  });
   try {
     const usersRef = collection(db, "users");
-
     const blockedUserQuery = await getDocs(
       query(usersRef, where("clerk_user_id", "==", req.params.userId))
     );
-
     const blockerQuery = await getDocs(
       query(usersRef, where("clerk_user_id", "==", blockerID))
     );
 
     if (blockedUserQuery.empty || blockerQuery.empty) {
+      logger.warn("Block failed - user not found", {
+        blockedUserId: req.params.userId,
+        blockerID,
+      });
       res.status(404).json({ error: "User not found" });
       return;
     }
 
     const blockedUserDoc = blockedUserQuery.docs[0];
     const blockerDoc = blockerQuery.docs[0];
-
     const batch = writeBatch(db);
 
-    // Update blocked user's blockedBy array
     const blockedByArray = blockedUserDoc.data().blockedBy || [];
+    const blockedArray = blockerDoc.data().blocked || [];
+
     if (!blockedByArray.includes(blockerID)) {
       batch.update(blockedUserDoc.ref, {
         blockedBy: [...blockedByArray, blockerID],
       });
     }
 
-    // Update blocker's blocked array
-    const blockedArray = blockerDoc.data().blocked || [];
     if (!blockedArray.includes(req.params.userId)) {
       batch.update(blockerDoc.ref, {
         blocked: [...blockedArray, req.params.userId],
@@ -367,15 +463,28 @@ app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
     }
 
     await batch.commit();
+    logger.info("User successfully blocked", {
+      blockedUserId: req.params.userId,
+      blockerID,
+    });
     res.json({ success: true });
   } catch (error) {
-    console.error("Error blocking user:", error);
+    logger.error("Error blocking user", {
+      blockedUserId: req.params.userId,
+      blockerID,
+      error: error.message,
+    });
     res.status(500).json({ error: "Failed to block user" });
   }
 });
 
 app.post("/api/reports", async (req: Request, res: Response) => {
   const { reporterID, reportedID, explanation, timestamp } = req.body;
+  logger.info("Report submission attempt", {
+    reporterID,
+    reportedID,
+    explanation,
+  });
   try {
     const reportsRef = collection(db, "reports");
     const newReport = await addDoc(reportsRef, {
@@ -385,9 +494,18 @@ app.post("/api/reports", async (req: Request, res: Response) => {
       timestamp,
       status: "pending",
     });
+    logger.info("Report successfully submitted", {
+      reportId: newReport.id,
+      reporterID,
+      reportedID,
+    });
     res.json({ id: newReport.id });
   } catch (error) {
-    console.error("Error creating report:", error);
+    logger.error("Error creating report", {
+      reporterID,
+      reportedID,
+      error: error.message,
+    });
     res.status(500).json({ error: "Failed to create report" });
   }
 });
