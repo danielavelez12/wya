@@ -22,6 +22,7 @@ import SignUpScreen from "./src/screens/Auth/sign-up";
 import ContactListScreen from "./src/screens/ContactList";
 import LocationDisabledScreen from "./src/screens/LocationDisabled";
 import MapScreen from "./src/screens/MapScreen";
+import PicturesScreen from "./src/screens/PicturesScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import TestAccountScreen from "./src/screens/TestAccount";
 
@@ -136,6 +137,8 @@ function AuthNavigator({ setUserId }) {
                     iconName = focused
                       ? "person-circle"
                       : "person-circle-outline";
+                  } else if (route.name === "Pictures") {
+                    iconName = focused ? "images" : "images-outline";
                   }
 
                   return <Ionicons name={iconName} size={size} color={color} />;
@@ -189,6 +192,18 @@ function AuthNavigator({ setUserId }) {
               >
                 {() => <ContactListScreen userId={userId} />}
               </Tab.Screen>
+              <Tab.Screen
+                name="Pics"
+                options={{
+                  tabBarIcon: ({ focused, color, size }) => {
+                    const iconName = focused ? "images" : "images-outline";
+                    return (
+                      <Ionicons name={iconName} size={size} color={color} />
+                    );
+                  },
+                }}
+                component={PicturesScreen}
+              />
               <Tab.Screen
                 name="Profile"
                 options={{
