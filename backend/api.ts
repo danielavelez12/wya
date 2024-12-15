@@ -82,7 +82,8 @@ app.get("/api/users", async (req: Request, res: Response) => {
     });
     res.json(users);
   } catch (error) {
-    console.error("Error fetching users:", error);
+    const err = error as Error;
+    console.error("Error fetching users:", err.message);
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
@@ -111,9 +112,10 @@ app.post("/api/users/location", async (req: Request, res: Response) => {
     logger.info("Location successfully updated", { userID, lat, lon });
     res.json({ success: true });
   } catch (error) {
+    const err = error as Error;
     logger.error("Error updating location", {
       userID,
-      error: error.message,
+      error: err.message,
     });
     res.status(500).json({ error: "Failed to update location" });
   }
@@ -144,11 +146,12 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
     });
     res.json({ id: newUser.id });
   } catch (error) {
+    const err = error as Error;
     logger.error("Error creating user", {
       clerkUserID,
-      error: error.message,
+      error: err.message,
     });
-    console.error("Error creating user:", error);
+    console.error("Error creating user:", err.message);
     res.status(500).json({ error: "Failed to create user" });
   }
 });
@@ -182,9 +185,10 @@ app.get(
         });
       }
     } catch (error) {
+      const err = error as Error;
       logger.error("Error checking phone number", {
         phoneNumber: req.params.phoneNumber,
-        error: error.message,
+        error: err.message,
       });
       res.status(500).json({ error: "Failed to check phone number" });
     }
@@ -208,11 +212,12 @@ app.get("/api/users/:userId", async (req: Request, res: Response) => {
       res.json({ id: userDoc.id, ...userDoc.data() });
     }
   } catch (error) {
+    const err = error as Error;
     logger.error("Error fetching user", {
       userId: req.params.userId,
-      error: error.message,
+      error: err.message,
     });
-    console.error("Error fetching user:", error);
+    console.error("Error fetching user:", err.message);
     res.status(500).json({ error: "Failed to fetch user" });
   }
 });
@@ -248,9 +253,10 @@ app.patch(
         res.json({ success: true });
       }
     } catch (error) {
+      const err = error as Error;
       logger.error("Error updating show location", {
         userId: req.params.userId,
-        error: error.message,
+        error: err.message,
       });
       res.status(500).json({ error: "Failed to update show location" });
     }
@@ -286,9 +292,10 @@ app.patch("/api/users/:userId/avatar", async (req: Request, res: Response) => {
       res.json({ success: true });
     }
   } catch (error) {
+    const err = error as Error;
     logger.error("Error updating avatar", {
       userId: req.params.userId,
-      error: error.message,
+      error: err.message,
     });
     res.status(500).json({ error: "Failed to update avatar" });
   }
@@ -314,7 +321,8 @@ app.patch(
         res.json({ success: true });
       }
     } catch (error) {
-      console.error("Error updating show city:", error);
+      const err = error as Error;
+      console.error("Error updating show city:", err.message);
       res.status(500).json({ error: "Failed to update show city" });
     }
   }
@@ -411,9 +419,10 @@ app.delete("/api/users/:userId", async (req: Request, res: Response) => {
       res.json({ success: true });
     }
   } catch (error) {
+    const err = error as Error;
     logger.error("Error deleting user", {
       userId: req.params.userId,
-      error: error.message,
+      error: err.message,
     });
     res.status(500).json({ error: "Failed to delete user" });
   }
@@ -469,10 +478,11 @@ app.patch("/api/users/:userId/block", async (req: Request, res: Response) => {
     });
     res.json({ success: true });
   } catch (error) {
+    const err = error as Error;
     logger.error("Error blocking user", {
       blockedUserId: req.params.userId,
       blockerID,
-      error: error.message,
+      error: err.message,
     });
     res.status(500).json({ error: "Failed to block user" });
   }
@@ -501,10 +511,11 @@ app.post("/api/reports", async (req: Request, res: Response) => {
     });
     res.json({ id: newReport.id });
   } catch (error) {
+    const err = error as Error;
     logger.error("Error creating report", {
       reporterID,
       reportedID,
-      error: error.message,
+      error: err.message,
     });
     res.status(500).json({ error: "Failed to create report" });
   }
