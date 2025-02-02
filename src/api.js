@@ -46,7 +46,8 @@ export async function createUser(
   firstName,
   lastName,
   email,
-  clerkUserID
+  clerkUserId,
+  expoPushToken
 ) {
   try {
     const response = await fetch(`${API_URL}/users/signup`, {
@@ -55,17 +56,16 @@ export async function createUser(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        phoneNumber,
-        firstName,
-        lastName,
+        phone_number: phoneNumber,
+        first_name: firstName,
+        last_name: lastName,
         email,
-        clerkUserID,
-        blockedBy: [],
+        clerk_user_id: clerkUserId,
+        expo_push_token: expoPushToken,
       }),
     });
     if (!response.ok) throw new Error("Network response was not ok");
-    const result = await response.json();
-    return result.id;
+    return await response.json();
   } catch (e) {
     console.error("createUser: error creating user: ", e);
     return null;

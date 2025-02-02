@@ -6,6 +6,7 @@ import {
   Alert,
   Image,
   LayoutAnimation,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -370,7 +371,13 @@ const ProfileScreen = ({
           )}
         </View>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutButtonText}>Sign Out</Text>
+          <Text style={styles.signOutButtonText}>Sign out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => Linking.openURL("sms:+19549559235")}>
+          <Text style={styles.footerText}>
+            Made with &lt;3 by Daniela. Feedback or bugs? Text me at{" "}
+            <Text style={styles.phoneLink}>+1 (954) 955-9235</Text>
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -406,6 +413,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#8B4513",
     marginBottom: 4,
+    maxWidth: "80%",
   },
   signOutButton: {
     backgroundColor: "#CD5C5C",
@@ -531,6 +539,15 @@ const styles = StyleSheet.create({
     color: "#FFF",
     textAlign: "center",
     fontWeight: "bold",
+  },
+  footerText: {
+    color: "#666666",
+    textAlign: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+  },
+  phoneLink: {
+    textDecorationLine: "underline",
   },
 });
 

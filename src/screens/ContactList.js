@@ -1,9 +1,12 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -48,12 +51,12 @@ async function getCityFromCoordinates(latitude, longitude) {
       const cityComponent = data.results[0].address_components.find(
         (component) => component.types.includes("locality")
       );
-      return cityComponent ? cityComponent.long_name : "Unknown Location";
+      return cityComponent ? cityComponent.long_name : null;
     }
-    return "Unknown Location";
+    return null;
   } catch (error) {
     console.error("Error getting city:", error);
-    return "Unknown Location";
+    return null;
   }
 }
 
@@ -72,7 +75,9 @@ function ContactListScreen({ userId }) {
               user.latitude,
               user.longitude
             );
-            cities[user.id] = city;
+            if (city) {
+              cities[user.id] = city;
+            }
           }
         }
         setUserCities(cities);
@@ -105,6 +110,14 @@ function ContactListScreen({ userId }) {
     );
   };
 
+  const handleEmailPress = (email) => {
+    Linking.openURL(`mailto:${email}`);
+  };
+
+  const handleTextPress = (phoneNumber) => {
+    Linking.openURL(`sms:${phoneNumber}`);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -118,20 +131,50 @@ function ContactListScreen({ userId }) {
       {CONTACT_LIST.map((contact, index) => {
         const matchingUser = findMatchingUser(contact);
 
-        // Skip rendering if user is blocked
         if (isUserBlocked(matchingUser)) return null;
 
         return (
           <View key={index} style={styles.contactItem}>
             <Text style={styles.contactName}>{contact}</Text>
             {matchingUser && (
-              <Text style={styles.contactDetails}>
-                {matchingUser.show_city &&
-                  userCities[matchingUser.id] &&
-                  `${userCities[matchingUser.id]} as of ${new Date(matchingUser.last_updated).toLocaleDateString()}\n`}
-                {matchingUser.email && `${matchingUser.email.toLowerCase()}`}
-                {matchingUser.phone && `\n${matchingUser.phone}`}
-              </Text>
+              <View>
+                {matchingUser.show_city && userCities[matchingUser.id] && (
+                  <Text style={styles.contactDetails}>
+                    {`${userCities[matchingUser.id]} as of ${new Date(
+                      matchingUser.last_updated
+                    ).toLocaleDateString()}`}
+                  </Text>
+                )}
+                {matchingUser.email && (
+                  <TouchableOpacity
+                    onPress={() => handleEmailPress(matchingUser.email)}
+                    style={styles.contactRow}
+                  >
+                    <Ionicons name="mail" size={16} color="#8B4513" />
+                    <Text style={[styles.contactDetails, styles.clickable]}>
+                      {matchingUser.email.toLowerCase()}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                {matchingUser.phone_number && (
+                  <TouchableOpacity
+                    onPress={() => handleTextPress(matchingUser.phone_number)}
+                    style={styles.contactRow}
+                  >
+                    <Ionicons
+                      name="chatbubble-ellipses"
+                      size={16}
+                      color="#8B4513"
+                    />
+                    <Text style={[styles.contactDetails, styles.clickable]}>
+                      {matchingUser.phone_number.replace(
+                        /(\d{1})(\d{3})(\d{3})(\d{4})/,
+                        "$1 ($2) $3-$4"
+                      )}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </View>
         );
@@ -162,9 +205,17 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   contactDetails: {
-    marginTop: 4,
     fontSize: 14,
     color: "#666666",
+  },
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  clickable: {
+    marginLeft: 8,
+    textDecorationLine: "underline",
   },
 });
 

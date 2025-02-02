@@ -1,8 +1,11 @@
 import { useAuth, useSignUp } from "@clerk/clerk-expo";
 import { useNavigation } from "@react-navigation/native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 import { useEffect, useState } from "react";
 import {
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -14,6 +17,9 @@ import PhoneInput from "react-native-phone-input";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { createUser } from "../../api";
+
+const INVITE_CODE = "kind-and-curious";
+const NUM_ATTEMPTS_ALLOWED = 3;
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -27,20 +33,67 @@ export default function SignUpScreen() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [clerkUserID, setClerkUserID] = useState("");
 
   const [sessionId, setSessionId] = useState(null);
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [expoPushToken, setExpoPushToken] = useState("");
 
   useEffect(() => {
     if (isSignedIn) {
     }
   }, [isSignedIn]);
 
+  async function registerForPushNotificationsAsync() {
+    let token;
+
+    if (Platform.OS === "ios") {
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== "granted") {
+        console.warn("Failed to get push token for push notification!");
+        return;
+      }
+    }
+
+    if (Device.isDevice) {
+      try {
+        token = (
+          await Notifications.getExpoPushTokenAsync({
+            projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+          })
+        ).data;
+
+        setExpoPushToken(token);
+      } catch (error) {
+        console.error("Error getting push token:", error);
+      }
+    } else {
+      console.log("Must use physical device for Push Notifications");
+    }
+  }
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
+
   const onSignUpPress = async () => {
     if (!isLoaded) return;
+
+    if (inviteCode !== INVITE_CODE) {
+      setErrorMessage("Please enter the right invite code.");
+      return null;
+    }
 
     try {
       setErrorMessage("");
@@ -105,14 +158,26 @@ export default function SignUpScreen() {
   }
 
   const onCompleteSignUp = async () => {
-    await createUser(phoneNumber, firstName, lastName, email, clerkUserID);
-    await setActive({ session: sessionId });
-    setVerified(true);
-    navigation.replace("Map");
+    try {
+      await createUser(
+        phoneNumber,
+        firstName,
+        lastName,
+        email,
+        clerkUserID,
+        expoPushToken
+      );
+      await setActive({ session: sessionId });
+      setVerified(true);
+      navigation.replace("Contacts");
+    } catch (error) {
+      console.error("Error completing sign up:", error);
+      setErrorMessage("Failed to complete sign up. Please try again.");
+    }
   };
 
   const isFormValid = () => {
-    return phoneNumber && password && termsAccepted;
+    return phoneNumber && password && termsAccepted && inviteCode;
   };
 
   return (
@@ -128,14 +193,14 @@ export default function SignUpScreen() {
         <>
           <Text style={styles.label}>You are already signed in.</Text>
           <TouchableOpacity style={styles.button} onPress={onSignOutPress}>
-            <Text style={styles.buttonText}>Sign Out</Text>
+            <Text style={styles.buttonText}>Sign out</Text>
           </TouchableOpacity>
         </>
       ) : (
         <>
           {!pendingVerification && (
             <>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.label}>Phone number</Text>
               <PhoneInput
                 style={styles.input}
                 initialCountry="us"
@@ -152,6 +217,14 @@ export default function SignUpScreen() {
                 onChangeText={setPassword}
                 placeholder="Enter your password"
                 secureTextEntry
+              />
+              <Text style={styles.label}>Invite code</Text>
+              <TextInput
+                style={styles.input}
+                value={inviteCode}
+                onChangeText={setInviteCode}
+                placeholder="Enter your invite code"
+                autoCapitalize="none"
               />
               <View style={styles.termsContainer}>
                 <Pressable
@@ -186,7 +259,7 @@ export default function SignUpScreen() {
           )}
           {pendingVerification && !verified && (
             <>
-              <Text style={styles.label}>Verification Code</Text>
+              <Text style={styles.label}>Verification code</Text>
               <TextInput
                 style={styles.input}
                 value={code}

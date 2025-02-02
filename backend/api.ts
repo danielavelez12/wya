@@ -16,6 +16,8 @@ import {
 } from "firebase/firestore";
 import winston from "winston";
 
+import { checkInactiveUsers } from "./notifications";
+
 require("dotenv").config();
 
 const firebaseConfig = {
@@ -520,6 +522,30 @@ app.post("/api/reports", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to create report" });
   }
 });
+
+// Daily cron job endpoint to check for inactive users
+app.post(
+  "/api/cron/check-inactive-users",
+  async (req: Request, res: Response) => {
+    const cronSecret = req.headers["x-cron-secret"];
+
+    if (cronSecret !== process.env.CRON_SECRET) {
+      logger.warn("Unauthorized cron job attempt");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      await checkInactiveUsers();
+      logger.info("Successfully ran inactive users check");
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("Error running inactive users check:", {
+        error: (error as Error).message,
+      });
+      res.status(500).json({ error: "Failed to check inactive users" });
+    }
+  }
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

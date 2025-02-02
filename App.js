@@ -155,6 +155,19 @@ function AuthNavigator({ setUserId }) {
               })}
             >
               <Tab.Screen
+                name="Contacts"
+                options={{
+                  tabBarIcon: ({ focused, color, size }) => {
+                    const iconName = focused ? "people" : "people-outline";
+                    return (
+                      <Ionicons name={iconName} size={size} color={color} />
+                    );
+                  },
+                }}
+              >
+                {() => <ContactListScreen userId={userId} />}
+              </Tab.Screen>
+              <Tab.Screen
                 name="Map"
                 options={{
                   tabBarIcon: ({ focused, color, size }) => {
@@ -178,19 +191,6 @@ function AuthNavigator({ setUserId }) {
                     />
                   )
                 }
-              </Tab.Screen>
-              <Tab.Screen
-                name="Contacts"
-                options={{
-                  tabBarIcon: ({ focused, color, size }) => {
-                    const iconName = focused ? "people" : "people-outline";
-                    return (
-                      <Ionicons name={iconName} size={size} color={color} />
-                    );
-                  },
-                }}
-              >
-                {() => <ContactListScreen userId={userId} />}
               </Tab.Screen>
               <Tab.Screen
                 name="Pics"

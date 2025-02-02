@@ -82,10 +82,10 @@ export default function SignInScreen() {
           style={styles.logo}
         />
       </View>
-      <Text style={styles.title}>Rabbitholers</Text>
+      <Text style={styles.title}>rabbitholers</Text>
       {!pendingVerification ? (
         <View>
-          <Text style={styles.label}>Phone Number</Text>
+          <Text style={styles.label}>Phone number</Text>
           <View style={styles.inputContainer}>
             <PhoneInput
               style={styles.input}
@@ -101,12 +101,12 @@ export default function SignInScreen() {
             ) : null}
           </View>
           <TouchableOpacity style={styles.button} onPress={onSignInPress}>
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text style={styles.buttonText}>Sign in</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View>
-          <Text style={styles.label}>Verification Code</Text>
+          <Text style={styles.label}>Verification code</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -117,7 +117,7 @@ export default function SignInScreen() {
             />
           </View>
           <TouchableOpacity style={styles.button} onPress={onPressVerify}>
-            <Text style={styles.buttonText}>Verify Phone Number</Text>
+            <Text style={styles.buttonText}>Verify phone number</Text>
           </TouchableOpacity>
         </View>
       )}

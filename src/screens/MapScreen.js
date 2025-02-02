@@ -230,7 +230,7 @@ const MapScreen = ({ location, avatar, userId }) => {
       </MapView>
       <TouchableOpacity style={styles.toggleButton} onPress={toggleZoom}>
         <Text style={styles.toggleButtonText}>
-          {isZoomedIn ? "Zoom Out" : "Zoom In"}
+          {isZoomedIn ? "Zoom out" : "Zoom in"}
         </Text>
       </TouchableOpacity>
       <PersonModal
