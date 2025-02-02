@@ -154,13 +154,13 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
     });
     logger.info("User successfully created", {
       userId: newUser.id,
-      clerkUserID,
+      clerkUserId,
     });
     res.json({ id: newUser.id });
   } catch (error) {
     const err = error as Error;
     logger.error("Error creating user", {
-      clerkUserID,
+      clerkUserId,
       error: err.message,
     });
     console.error("Error creating user:", err.message);
