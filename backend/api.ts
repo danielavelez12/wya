@@ -528,13 +528,6 @@ app.post("/api/reports", async (req: Request, res: Response) => {
 app.post(
   "/api/cron/check-inactive-users",
   async (req: Request, res: Response) => {
-    const cronSecret = req.headers["x-cron-secret"];
-
-    if (cronSecret !== process.env.CRON_SECRET) {
-      logger.warn("Unauthorized cron job attempt");
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     try {
       await checkInactiveUsers();
       logger.info("Successfully ran inactive users check");
