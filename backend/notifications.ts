@@ -162,8 +162,8 @@ export async function checkInactiveUsers(): Promise<void> {
       // Create notification record
       await createNotification(
         user.clerk_user_id,
-        "Update Your Location",
-        "We noticed you haven't checked in for a while - take a moment to open the app!",
+        "Hi from rabbitholers!",
+        "We noticed you haven't checked in for a while - take a moment to open the app.",
         nonce
       );
 
