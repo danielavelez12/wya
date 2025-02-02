@@ -82,7 +82,7 @@ async function sendPushNotification(
         sound: "default",
         title,
         body,
-        priority: "high",
+        priority: "high" as const,
       },
     ];
 
