@@ -125,12 +125,20 @@ app.post("/api/users/location", async (req: Request, res: Response) => {
 });
 
 app.post("/api/users/signup", async (req: Request, res: Response) => {
-  const { phoneNumber, firstName, lastName, email, clerkUserID } = req.body;
+  const {
+    phoneNumber,
+    firstName,
+    lastName,
+    email,
+    clerkUserID,
+    expoPushToken,
+  } = req.body;
   logger.info("User signup attempt", {
     clerkUserID,
     email,
     firstName,
     lastName,
+    expoPushToken,
   });
   try {
     const usersRef = collection(db, "users");
@@ -140,6 +148,7 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
       last_name: lastName,
       email,
       clerk_user_id: clerkUserID,
+      expo_push_token: expoPushToken,
       blocked_by: [],
       blocked: [],
     });

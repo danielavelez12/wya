@@ -56,12 +56,12 @@ export async function createUser(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        phone_number: phoneNumber,
-        first_name: firstName,
-        last_name: lastName,
+        phoneNumber,
+        firstName,
+        lastName,
         email,
-        clerk_user_id: clerkUserId,
-        expo_push_token: expoPushToken,
+        clerkUserId,
+        expoPushToken,
       }),
     });
     if (!response.ok) throw new Error("Network response was not ok");

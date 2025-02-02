@@ -160,6 +160,7 @@ export default function SignUpScreen() {
   const onCompleteSignUp = async () => {
     try {
       console.log({ expoPushToken });
+      console.log({ phoneNumber });
       await createUser(
         phoneNumber,
         firstName,
