@@ -130,11 +130,11 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
     firstName,
     lastName,
     email,
-    clerkUserID,
+    clerkUserId,
     expoPushToken,
   } = req.body;
   logger.info("User signup attempt", {
-    clerkUserID,
+    clerkUserId,
     email,
     firstName,
     lastName,
@@ -147,7 +147,7 @@ app.post("/api/users/signup", async (req: Request, res: Response) => {
       first_name: firstName,
       last_name: lastName,
       email,
-      clerk_user_id: clerkUserID,
+      clerk_user_id: clerkUserId,
       expo_push_token: expoPushToken,
       blocked_by: [],
       blocked: [],
