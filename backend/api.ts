@@ -44,7 +44,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-interface User {
+export interface User {
   id?: string;
   phone_number: string;
   first_name: string;
@@ -59,6 +59,7 @@ interface User {
   avatar?: string;
   blocked_by?: string[];
   blocked?: string[];
+  expo_push_token: string;
 }
 
 const logger = winston.createLogger({

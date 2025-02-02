@@ -11,6 +11,8 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import winston from "winston";
 
+import { User } from "./api";
+
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "wya-app-530d5.firebaseapp.com",
@@ -142,7 +144,8 @@ export async function checkInactiveUsers(): Promise<void> {
       ...doc.data(),
     }));
 
-    for (const user of inactiveUsers) {
+    for (const inactiveUser of inactiveUsers) {
+      const user = inactiveUser as User;
       // Check if notification was already sent this month
       const alreadySent = await hasNotificationBeenSent(
         user.clerk_user_id,
